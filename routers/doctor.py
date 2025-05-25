@@ -6,8 +6,10 @@ from database import get_db
 from models.doctor import Doctor as DoctorModel
 from schemas.doctor import DoctorCreate as DoctorCreateSchema
 from schemas.doctor import DoctorUpdate as DoctorUpdateSchema
-from schemas.doctor import Doctor as DoctorSchema
+from schemas.doctor import DoctorResponse as DoctorResponseSchema
 from sqlalchemy.exc import IntegrityError
+from models.specialization import Specialization as SpecializationModel
+
 
 
 router = APIRouter(
@@ -19,7 +21,7 @@ router = APIRouter(
 @router.post(
     "/", 
     status_code=status.HTTP_201_CREATED,
-    response_model=DoctorSchema
+    response_model=DoctorResponseSchema
 )
 def create_doctor(
     doctor: DoctorCreateSchema,
@@ -31,15 +33,35 @@ def create_doctor(
     - **last_name**: Doctor's last name (required)
     - **date_of_birth**: Format YYYY-MM-DD (required)
     - **gender**: Male/Female (required)
+    - **specialization_name**: specialty name i.e 'Neurologist'(required)
     - **email**: Valid email format (required)
     - **phone**: Contact number (required)
     - **address**: Optional address
     """
+    # Find existing specialization
+    spec = db.query(SpecializationModel).filter(
+        SpecializationModel.name.ilike(doctor.specialization_name)
+    ).first()
+
+    if not spec:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Specialization '{doctor.specialization_name}' not found"
+        )
+        
+        
     try: 
-        db_doctor = DoctorModel(**doctor.model_dump())
+        # Create doctor with existing specialization
+        db_doctor = DoctorModel(
+            **doctor.model_dump(exclude={"specialization_name"}),
+            specialization_id=spec.id
+        )
         db.add(db_doctor)
         db.commit()
         db.refresh(db_doctor) # autogenerate ID
+        specialization = db.query(SpecializationModel).filter_by(name=doctor.specialization_name).first()
+        if not specialization:
+            raise HTTPException(status_code=404, detail="Specialization not found")
         return db_doctor
     except IntegrityError:
         db.rollback()
@@ -58,7 +80,7 @@ def create_doctor(
 # Get all patients
 @router.get(
     "/", 
-    response_model=list[DoctorSchema]
+    response_model=list[DoctorResponseSchema]
 )
 def get_all_doctors(
     skip: int = 0, 
@@ -76,7 +98,7 @@ def get_all_doctors(
 # Get single patient by ID
 @router.get(
     "/{doctor_id}", 
-    response_model=DoctorSchema
+    response_model=DoctorResponseSchema
 )
 def get_doctor(
     doctor_id: int, 
@@ -94,10 +116,10 @@ def get_doctor(
         )
     return doctor
 
-# # Update patient
+# # Update doctor
 @router.put(
     "/{doctor_id}", 
-    response_model=DoctorSchema
+    response_model=DoctorResponseSchema
 )
 def update_doctor(
     doctor_id: int,
@@ -122,8 +144,21 @@ def update_doctor(
 
     update_data = doctor_data.model_dump(exclude_unset=True)
     try:
-        doctor_query.update(update_data, synchronize_session=False)    
-        db.commit()
+        # Remove specialization_name from update_data (it's handled separately)
+        specialization_name = update_data.pop("specialization_name", None)
+
+        # Update other fields directly
+        doctor_query.update(update_data, synchronize_session=False)
+
+        # If specialization_name was provided, update the relationship
+        if specialization_name:
+            specialization_instance = db.query(SpecializationModel).filter_by(
+                name=specialization_name
+            ).first()
+            if not specialization_instance:
+                raise HTTPException(status_code=404, detail=f"Specialization '{doctor_data.specialization_name}' not found")
+            doctor.specialization = specialization_instance
+        db.commit()   
         db.refresh(doctor)
         return doctor
     except IntegrityError:
