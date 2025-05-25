@@ -5,7 +5,7 @@ from database import SessionLocal, Base  # Direct import
 class Patient(Base):
     __tablename__ = "patients"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     first_name = Column(String(50), nullable=False)
     last_name = Column(String(50), nullable=False)
     date_of_birth = Column(Date, nullable=False)
