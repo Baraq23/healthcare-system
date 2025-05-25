@@ -50,4 +50,25 @@ The backend is built using Python FastAPI for the API framework, ORM-Alchemy for
 
 
 
+## API Endpoints
+
+
+### Patiens
+
+- **POST /patients**: Create a new patient.
+- **GET /patients**: Get all patients.
+- **GET /patients/{id}**: Get a specific patient by ID.
+- **PUT /patients/{id}**: Update a patient's record.
+- **DELETE /patients/{id}**: Delete a patient's record.
+
+### Doctors
+
+- **POST /doctors**: Create a new doctor.
+- **GET /doctors**: Get all doctors.
+- **GET /doctors/{id}**: Get a specific doctor by ID.
+- **PUT /doctors/{id}**: Update a doctor's record.
+- **DELETE /doctors/{id}**: Delete a doctor's record.
+
+
+
 
