@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models.patient import Patient as PatientModel
 from schemas.patient import PatientCreate as PatientCreateSchema
+from schemas.patient import PatientUpdate as PatientUpdateSchema
 from schemas.patient import Patient as PatientSchema
 from sqlalchemy.exc import IntegrityError
 
@@ -50,7 +51,7 @@ def create_patient(
         db.rollback()
         raise HTTPException(
             status_code=400,
-            detail=f"Erro: Missing required fields: ${str(e)}"
+            detail=f"Erro: Missing required fields: {str(e)}"
         )
     
 
@@ -73,78 +74,86 @@ def get_all_patients(
     return patients
 
 # Get single patient by ID
-# @router.get(
-#     "/{patient_id}", 
-#     response_model=schemas.Patient
-# )
-# def get_patient(
-#     patient_id: int, 
-#     db: Session = Depends(database.get_db)
-# ):
-#     """Retrieve a specific patient by their ID"""
-#     patient = db.query(models.Patient).filter(
-#         models.Patient.id == patient_id
-#     ).first()
+@router.get(
+    "/{patient_id}", 
+    response_model=PatientSchema
+)
+def get_patient(
+    patient_id: int, 
+    db: Session = Depends(get_db)
+):
+    """Retrieve a specific patient by their ID"""
+    patient = db.query(PatientModel).filter(
+        PatientModel.id == patient_id
+    ).first()
     
-#     if not patient:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"Patient with id {patient_id} not found"
-#         )
-#     return patient
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Patient with id {patient_id} not found"
+        )
+    return patient
 
 # # Update patient
-# @router.put(
-#     "/{patient_id}", 
-#     response_model=schemas.Patient
-# )
-# def update_patient(
-#     patient_id: int,
-#     patient_data: schemas.PatientUpdate,
-#     db: Session = Depends(database.get_db)
-# ):
-#     """
-#     Update patient information (partial update supported):
-#     - All fields are optional
-#     - Only provided fields will be updated
-#     """
-#     patient_query = db.query(models.Patient).filter(
-#         models.Patient.id == patient_id
-#     )
-#     patient = patient_query.first()
+@router.put(
+    "/{patient_id}", 
+    response_model=PatientSchema
+)
+def update_patient(
+    patient_id: int,
+    patient_data: PatientUpdateSchema,
+    db: Session = Depends(get_db)
+):
+    """
+    Update patient information (partial update supported):
+    - All fields are optional
+    - Only provided fields will be updated
+    """
+    patient_query = db.query(PatientModel).filter(
+        PatientModel.id == patient_id
+    )
+    patient = patient_query.first()
 
-#     if not patient:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"Patient with id {patient_id} not found"
-#         )
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Patient with id {patient_id} not found"
+        )
 
-#     update_data = patient_data.dict(exclude_unset=True)
-#     patient_query.update(update_data, synchronize_session=False)
-#     db.commit()
-#     db.refresh(patient)
-#     return patient
+    update_data = patient_data.model_dump(exclude_unset=True)
+    try:
+        patient_query.update(update_data, synchronize_session=False)    
+        db.commit()
+        db.refresh(patient)
+        return patient
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Email already exists."
+        )
+
 
 # # Delete patient
-# @router.delete(
-#     "/{patient_id}",
-#     status_code=status.HTTP_204_NO_CONTENT
-# )
-# def delete_patient(
-#     patient_id: int,
-#     db: Session = Depends(database.get_db)
-# ):
-#     """Delete a patient record by ID"""
-#     patient = db.query(models.Patient).filter(
-#         models.Patient.id == patient_id
-#     ).first()
+@router.delete(
+    "/{patient_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_patient(
+    patient_id: int,
+    db: Session = Depends(get_db)
+):
+    """Delete a patient record by ID"""
+    patient = db.query(PatientModel).filter(
+        PatientModel.id == patient_id
+    ).first()
 
-#     if not patient:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"Patient with id {patient_id} not found"
-#         )
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Patient with id {patient_id} not found"
+        )
 
-#     db.delete(patient)
-#     db.commit()
-#     return
+    db.delete(patient)
+    db.commit()
+    return
