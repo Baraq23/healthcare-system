@@ -21,3 +21,33 @@ The backend is built using Python FastAPI for the API framework, ORM-Alchemy for
     └── README.md             # Project Documentation
 
 
+### List of Packages to Download in your environment
+
+
+- `FastAPI`: high-performance web framework for building APIs with Python
+
+```bash
+    pip install fastapi uvicorn[standard]
+```
+
+ - `Uvicorn`: an ASGI (Asynchronous Server Gateway Interface) web server for Python.
+ ```bash
+    pip install 'uvicorn[standard]'
+```
+
+
+- `SQLAlchemy`: ORM (Object Relational Mapper) and SQL toolkit for Python (Object Relational Mapper)
+
+```bash
+    pip install sqlalchemy
+```
+
+- `PyMySQL`: pure-Python MySQL client library allowing Python to connect to MySQL databases
+
+```bash
+    pip install pymysql
+```
+
+
+
+
