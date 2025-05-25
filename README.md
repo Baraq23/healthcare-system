@@ -69,6 +69,13 @@ The backend is built using Python FastAPI for the API framework, ORM-Alchemy for
 - **PUT /doctors/{id}**: Update a doctor's record.
 - **DELETE /doctors/{id}**: Delete a doctor's record.
 
+### Specializations
+
+- **POST /specializations**: Create a new specialization.
+- **GET /specializations**: Get all specializations.
+- **GET /specializations/{id}**: Get a specific specialization by ID.
+
+
 
 
 
