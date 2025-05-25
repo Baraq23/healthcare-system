@@ -2,10 +2,11 @@
 # routers/patients.py (absolute imports)
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from database import get_db as getDB
+from database import get_db
 from models.patient import Patient as PatientModel
 from schemas.patient import PatientCreate as PatientCreateSchema
 from schemas.patient import Patient as PatientSchema
+from sqlalchemy.exc import IntegrityError
 
 
 router = APIRouter(
@@ -21,7 +22,7 @@ router = APIRouter(
 )
 def create_patient(
     patient: PatientCreateSchema,
-    db: Session = Depends(getDB)
+    db: Session = Depends(get_db)
 ):
     """
     Create a new patient record with:
@@ -33,11 +34,25 @@ def create_patient(
     - **phone**: Contact number (required)
     - **address**: Optional address
     """
-    db_patient = PatientModel(**patient.dict())
-    db.add(db_patient)
-    db.commit()
-    db.refresh(db_patient) # autogenerate ID
-    return db_patient
+    try: 
+        db_patient = PatientModel(**patient.model_dump())
+        db.add(db_patient)
+        db.commit()
+        db.refresh(db_patient) # autogenerate ID
+        return db_patient
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Email already exists."
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail=f"Erro: Missing required fields: ${str(e)}"
+        )
+    
 
 # Get all patients
 @router.get(
@@ -47,7 +62,7 @@ def create_patient(
 def get_all_patients(
     skip: int = 0, 
     limit: int = 100,
-    db: Session = Depends(getDB)
+    db: Session = Depends(get_db)
 ):
     """
     Retrieve all patients with optional pagination:
