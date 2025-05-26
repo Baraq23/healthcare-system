@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from database import get_db
 from models.appointment import Appointment as AppointmentModel
@@ -30,8 +30,19 @@ def check_availability(db: Session, doctor_id: int, start_time: datetime, end_ti
 
 @router.post("/", response_model=AppointmentResponseModel)
 def create_appointment(appointment: AppointmentCreateModel, db: Session = Depends(get_db)):
-    scheduled_datetime = appointment.scheduled_datetime
+    
 
+    now = datetime.now(timezone.utc)
+    scheduled_datetime_utc = appointment.scheduled_datetime.replace(tzinfo=timezone.utc)
+
+    # Check if scheduled_datetime is in the past
+    if scheduled_datetime_utc < now:
+        raise HTTPException(
+            status_code=400,
+            detail="Appointments can only be scheduled for future time slots."
+        )
+    
+    scheduled_datetime = appointment.scheduled_datetime
     # Try to acquire both locks
     doctor_lock_acquired = acquire_doctor_lock(appointment.doctor_id, scheduled_datetime)
     patient_lock_acquired = acquire_patient_lock(appointment.patient_id, scheduled_datetime)
@@ -54,7 +65,7 @@ def create_appointment(appointment: AppointmentCreateModel, db: Session = Depend
         end_time = appointment.scheduled_datetime + timedelta(minutes=59)
         conflicts = check_availability(db, appointment.doctor_id, start_time, end_time)
         if conflicts:
-            raise HTTPException(status_code=409, detail="Doctor has conflicting appointment.")
+            raise HTTPException(status_code=409, detail="Time slot already booked.")
 
         # Check patient doesn't have overlapping appointments (optional, since lock already prevents double-booking)
         patient_conflict = db.query(AppointmentModel).filter(
