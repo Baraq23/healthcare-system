@@ -16,6 +16,16 @@ from schemas.appointment import (
     AppointmentUpdate as AppointmentUpdateModel,
     AvailabilityResponse as AvailabilityResponseModel
 )
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Loads environment variables from the .env file
+
+SLOT_INTERVAL_MINUTES = int(os.getenv('SLOT_INTERVAL_MINUTES', 60))
+TIME_BETWEEN_APPOINTMENTS_MINUTES = int(os.getenv('TIME_BETWEEN_APPOINTMENTS_MINUTES', 58))
+WORKING_HOURS_START = int(os.getenv('WORKING_HOURS_START', 9))
+WORKING_HOURS_END = int(os.getenv('WORKING_HOURS_END', 17))
+
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
@@ -33,7 +43,7 @@ def create_appointment(appointment: AppointmentCreateModel, db: Session = Depend
     
 
     now = datetime.now(timezone.utc)
-    scheduled_datetime_utc = appointment.scheduled_datetime.replace(tzinfo=timezone.utc)
+    scheduled_datetime_utc = appointment.scheduled_datetime.astimezone(timezone.utc)
 
     # Check if scheduled_datetime is in the past
     if scheduled_datetime_utc < now:
@@ -44,7 +54,7 @@ def create_appointment(appointment: AppointmentCreateModel, db: Session = Depend
     
     # Extract the time part (hour, minute)
     appointment_time = scheduled_datetime_utc.time()
-    if not (time(9, 0) <= appointment_time < time(17, 0)):
+    if not (time(WORKING_HOURS_START, 0) <= appointment_time < time(WORKING_HOURS_END, 0)):
         raise HTTPException(
             status_code=400,
             detail="Appointments can only be scheduled between 0900hrs and 1700hrs."
@@ -69,8 +79,8 @@ def create_appointment(appointment: AppointmentCreateModel, db: Session = Depend
 
     try:
         # Check for doctor conflicts (optional, since lock already prevents double-booking)
-        start_time = appointment.scheduled_datetime - timedelta(minutes=59)
-        end_time = appointment.scheduled_datetime + timedelta(minutes=59)
+        start_time = appointment.scheduled_datetime - timedelta(minutes=TIME_BETWEEN_APPOINTMENTS_MINUTES)
+        end_time = appointment.scheduled_datetime + timedelta(minutes=TIME_BETWEEN_APPOINTMENTS_MINUTES)
         conflicts = check_availability(db, appointment.doctor_id, start_time, end_time)
         if conflicts:
             raise HTTPException(status_code=409, detail="Time slot already booked.")
@@ -150,30 +160,28 @@ def get_availability(
         AppointmentModel.doctor_id == doctor_id,
         AppointmentModel.scheduled_datetime >= start_time,
         AppointmentModel.scheduled_datetime < end_time,
-        AppointmentModel.status != "cancelled"
+        AppointmentModel.status != AppointmentStatusModel.CANCELLED
     ).all()
     booked_slots = {appt.scheduled_datetime for appt in appointments}
 
     # Generate available slots (every 60 minutes)
-    available_slots = []
     current_slot = start_time
     now = datetime.now(timezone.utc)
 
     # Generate all possible slots (every 60 minutes, 9:00-17:00)
-    working_start = start_time.replace(hour=9, minute=0, second=0)
-    working_end = start_time.replace(hour=17, minute=0, second=0)
+    working_start = start_time.replace(hour=WORKING_HOURS_START, minute=0, second=0)
+    working_end = start_time.replace(hour=WORKING_HOURS_END, minute=0, second=0)
 
     all_slots = []
     current_slot = working_start
     while current_slot < working_end:
         all_slots.append(current_slot)
-        current_slot += timedelta(minutes=60)
+        current_slot += timedelta(minutes=SLOT_INTERVAL_MINUTES)
 
     # Filter out booked slots
     available_slots = [slot for slot in all_slots if slot not in booked_slots]
 
     # Optionally, filter out slots in the past
-    now = datetime.now(timezone.utc)
     available_slots = [slot for slot in available_slots if slot >= now]
 
     return AvailabilityResponseModel(
@@ -191,7 +199,7 @@ def get_doctor_booked_slots(doctor_id: int, db: Session = Depends(get_db)):
     # Query all appointments for the doctor (excluding cancelled)
     appointments = db.query(AppointmentModel.scheduled_datetime).filter(
         AppointmentModel.doctor_id == doctor_id,
-        AppointmentModel.status != "cancelled"
+        AppointmentModel.status != AppointmentStatusModel.CANCELLED
     ).all()
 
     # Extract the datetime objects
