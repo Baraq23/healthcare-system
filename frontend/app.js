@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'http://localhost:8000';
 let currentUser = null; // { token, id, type, name, email }
 let specializationsCache = []; // Cache for specializations
 let doctorsCache = []; // Cache for doctors by specialization
@@ -31,7 +31,6 @@ const apptDateInput = document.getElementById('appt-date');
 const timeSlotsContainer = document.getElementById('time-slots-container');
 const bookAppointmentBtn = document.getElementById('book-appointment-btn');
 const apptTimeInput = document.getElementById('appt-time');
-
 
 const loadingIndicator = document.getElementById('loading-indicator');
 const errorMessageArea = document.getElementById('error-message-area');
@@ -199,18 +198,17 @@ function clearDashboardData() {
     document.getElementById('doctor-cancelled-appointments').innerHTML = '';
 }
 
-
 async function handleRegister(event) {
     event.preventDefault();
     const form = event.target;
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
-    
+
     // Convert dob to ISO string if not already
     if (data.dob) {
         // Ensure it's a valid date string before converting to avoid issues with empty or malformed dates
         try {
-           data.date_of_birth = new Date(data.dob).toISOString().split('T')[0];
+            data.date_of_birth = new Date(data.dob).toISOString().split('T')[0];
         } catch (e) {
             displayError("Invalid Date of Birth format.");
             return;
@@ -218,17 +216,15 @@ async function handleRegister(event) {
         delete data.dob; // remove original dob field
     }
 
-
     const userType = form.id === 'register-patient-form' ? 'patient' : 'doctor';
     const endpoint = userType === 'patient' ? '/patients' : '/doctors';
-    
+
     // Map form fields to expected API fields if necessary
     // e.g. specializationId for doctors
     if (userType === 'doctor' && data.specializationId) {
         data.specialization_id = parseInt(data.specializationId, 10);
         delete data.specializationId;
     }
-
 
     try {
         await apiCall(endpoint, 'POST', data, false);
@@ -243,7 +239,7 @@ async function handleRegister(event) {
 
 async function loadSpecializations() {
     try {
-        specializationsCache = await apiCall('/specializations/', 'GET', null, false); // Specializations likely public
+        specializationsCache = await apiCall('/specializations', 'GET', null, false); 
         doctorSpecializationSelect.innerHTML = '<option value="">Select Specialization</option>';
         apptSpecializationSelect.innerHTML = '<option value="">Select Specialization</option>';
         specializationsCache.forEach(spec => {
@@ -260,15 +256,14 @@ async function loadSpecializations() {
 
 // Patient Dashboard
 async function loadPatientDashboardData() {
-    await loadSpecializationsForBooking(); // Ensure specializations are loaded for booking form
+    await loadSpecializationsForBooking(); 
     await fetchPatientAppointments();
     setupPatientTabs();
 }
 
 async function loadSpecializationsForBooking() {
-    // If already loaded by registration form, this might be redundant unless patient logs in directly
     if (apptSpecializationSelect.options.length <= 1 || specializationsCache.length === 0) {
-        await loadSpecializations(); // This fills both registration and booking specialization dropdowns
+        await loadSpecializations(); 
     }
 }
 
@@ -286,7 +281,7 @@ async function handleApptSpecializationChange() {
     }
 
     try {
-        doctorsCache = await apiCall(`/doctors/?specialization_id=${specializationId}`, 'GET');
+        doctorsCache = await apiCall(`/doctors?specialization_id=${specializationId}`, 'GET');
         apptDoctorSelect.innerHTML = '<option value="">Select Doctor</option>';
         doctorsCache.forEach(doc => {
             const option = new Option(`${doc.first_name} ${doc.last_name}`, doc.id);
@@ -319,21 +314,20 @@ async function handleApptDateChange() {
     }
 
     try {
-        // API should return slots: [{time: "HH:MM:SS", is_available: true/false}, ...] for 9 AM to 5 PM hourly
-        const availability = await apiCall(`/doctors/${doctorId}/availability?date=${date}`, 'GET');
+        const availability = await apiCall(`/appointments/availability/${doctorId}?date=${date}`, 'GET');
         timeSlotsContainer.innerHTML = '';
         
         const fixedSlots = ["09:00:00", "10:00:00", "11:00:00", "12:00:00", "13:00:00", "14:00:00", "15:00:00", "16:00:00"];
         
         if (availability && availability.length > 0) {
-             const availableSlotsMap = new Map(availability.map(slot => [slot.time, slot.is_available]));
+            const availableSlotsMap = new Map(availability.map(slot => [slot.time, slot.is_available]));
 
             fixedSlots.forEach(timeStr => {
-                const isAvailable = availableSlotsMap.get(timeStr) !== false; // Assume available if not explicitly booked
+                const isAvailable = availableSlotsMap.get(timeStr) !== false; 
                 const slotButton = document.createElement('button');
                 slotButton.type = 'button';
                 slotButton.classList.add('time-slot-button');
-                slotButton.textContent = timeStr.substring(0, 5); // Show HH:MM
+                slotButton.textContent = timeStr.substring(0, 5); 
                 slotButton.dataset.time = timeStr;
 
                 if (!isAvailable) {
@@ -345,8 +339,6 @@ async function handleApptDateChange() {
                 timeSlotsContainer.appendChild(slotButton);
             });
         } else {
-             // If API returns empty or no availability info, assume all slots are bookable OR display message
-            // For now, let's make them all available if no info, or you can show "No slots defined"
             fixedSlots.forEach(timeStr => {
                 const slotButton = document.createElement('button');
                 slotButton.type = 'button';
@@ -356,11 +348,10 @@ async function handleApptDateChange() {
                 slotButton.addEventListener('click', selectTimeSlot);
                 timeSlotsContainer.appendChild(slotButton);
             });
-             // displayError("No availability information for this doctor/date. Assuming all slots open.");
         }
 
         if (timeSlotsContainer.children.length === 0) {
-             timeSlotsContainer.innerHTML = '<p>No available slots for this day.</p>';
+            timeSlotsContainer.innerHTML = '<p>No available slots for this day.</p>';
         }
 
     } catch (error) {
@@ -387,29 +378,32 @@ async function handleBookAppointment(event) {
         return;
     }
 
-    const appointmentDateTime = `${date}T${time}`; // ISO 8601 format, e.g., 2024-07-30T09:00:00
+    const appointmentDateTime = `${date}T${time}`; 
 
     try {
-        // API expects: { doctor_id, appointment_time (ISO string) }. Patient ID from token.
-        await apiCall('/appointments/', 'POST', {
+        await apiCall('/appointments', 'POST', {
             doctor_id: parseInt(doctorId),
             appointment_time: appointmentDateTime
         });
-        displayError('Appointment booked successfully!'); // Temporary success message via error display
+        displayError('Appointment booked successfully!'); 
         scheduleAppointmentForm.reset();
         apptDoctorSelect.disabled = true;
         apptDateInput.disabled = true;
         timeSlotsContainer.innerHTML = '<p>Please select a doctor and date.</p>';
         bookAppointmentBtn.disabled = true;
-        fetchPatientAppointments(); // Refresh appointment list
+        fetchPatientAppointments(); 
     } catch (error) {
         // Error already displayed
     }
 }
 
 async function fetchPatientAppointments() {
+    if (!currentUser || !currentUser.id) {
+        displayError('User not identified. Cannot fetch appointments.');
+        return;
+    }
     try {
-        const appointments = await apiCall('/patients/me/appointments/', 'GET');
+        const appointments = await apiCall(`/appointments/patient/${currentUser.id}`, 'GET');
         renderAppointments(appointments, 'patient');
     } catch (error) {
         displayError('Failed to fetch patient appointments.');
@@ -419,14 +413,17 @@ async function fetchPatientAppointments() {
 async function cancelAppointment(appointmentId) {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
     try {
-        await apiCall(`/appointments/${appointmentId}/cancel`, 'PUT'); // Or POST or DELETE based on API design
-        displayError('Appointment cancelled.'); // Temporary success message
-        fetchPatientAppointments(); // Refresh
+        await apiCall(`/appointments/${appointmentId}`, 'PUT', { status: 'cancelled' });
+        displayError('Appointment cancelled.'); 
+        if (currentUser.type === 'patient') {
+            fetchPatientAppointments();
+        } else if (currentUser.type === 'doctor') {
+            fetchDoctorAppointments();
+        }
     } catch (error) {
         displayError('Failed to cancel appointment.');
     }
 }
-
 
 // Doctor Dashboard
 async function loadDoctorDashboardData() {
@@ -435,8 +432,12 @@ async function loadDoctorDashboardData() {
 }
 
 async function fetchDoctorAppointments() {
+    if (!currentUser || !currentUser.id) {
+        displayError('User not identified. Cannot fetch appointments.');
+        return;
+    }
     try {
-        const appointments = await apiCall('/doctors/me/appointments/', 'GET');
+        const appointments = await apiCall(`/appointments/doctors/${currentUser.id}`, 'GET');
         renderAppointments(appointments, 'doctor');
     } catch (error) {
         displayError('Failed to fetch doctor appointments.');
@@ -446,9 +447,9 @@ async function fetchDoctorAppointments() {
 async function markAppointmentCompleted(appointmentId) {
     if (!confirm("Mark this appointment as completed?")) return;
     try {
-        await apiCall(`/appointments/${appointmentId}/complete`, 'PUT'); // Or POST
-        displayError('Appointment marked as completed.'); // Temporary success message
-        fetchDoctorAppointments(); // Refresh
+        await apiCall(`/appointments/${appointmentId}`, 'PUT', { status: 'completed' });
+        displayError('Appointment marked as completed.'); 
+        fetchDoctorAppointments(); 
     } catch (error) {
         displayError('Failed to mark appointment as completed.');
     }
@@ -456,8 +457,7 @@ async function markAppointmentCompleted(appointmentId) {
 
 async function viewPatientDetails(patientId) {
     try {
-        const patient = await apiCall(`/patients/${patientId}`, 'GET'); // Requires doctor auth
-        // Display patient details in a modal or dedicated area (not implemented in this version)
+        const patient = await apiCall(`/patients/${patientId}`, 'GET'); 
         alert(`Patient Details:\nName: ${patient.first_name} ${patient.last_name}\nEmail: ${patient.email}\nPhone: ${patient.phone_number}\nDOB: ${patient.date_of_birth}`);
     } catch (error) {
         displayError('Failed to fetch patient details.');
@@ -531,7 +531,7 @@ function renderAppointments(appointments, userType) {
             upcomingList.appendChild(item);
             hasUpcoming = true;
         } else if (appt.status === 'completed') {
-            if (userType === 'doctor' && appt.patient_id) { // Add view patient button for completed if doctor
+            if (userType === 'doctor' && appt.patient_id) { 
                  const viewPatientBtn = document.createElement('button');
                 viewPatientBtn.textContent = 'View Patient';
                 viewPatientBtn.classList.add('button', 'secondary', 'small');
@@ -564,34 +564,22 @@ function setupTabs(containerSelector) {
             tabContents.forEach(content => content.classList.add('hidden'));
             const targetTabId = button.dataset.tab;
 
-            // Find the content based on a naming convention, e.g., patient-upcoming-appointments
             let contentIdToFind = targetTabId;
-            if (!targetTabId.endsWith('-appointments')) { // Ensure full ID if only partial in data-tab
+            if (!targetTabId.endsWith('-appointments')) { 
                  const prefix = containerSelector.includes('patient') ? 'patient' : 'doctor';
                  contentIdToFind = `${prefix}-${targetTabId}-appointments`;
-                 // This logic might be fragile, better to use full IDs in data-tab or a clearer mapping
-                 // For now, assuming data-tab is like "patient-upcoming" or "doctor-upcoming"
-                 // And corresponding element ID is "patient-upcoming-appointments"
-                 // Corrected assumption: data-tab attribute has the full ID or a direct reference.
-                 // My HTML used e.g. data-tab="patient-upcoming" for an element with id="patient-upcoming-appointments"
-                 // A better direct mapping:
-                 const targetContent = document.getElementById(targetTabId + (targetTabId.includes('appointments') ? '' : '-appointments'));
-                 if (targetContent) {
-                    targetContent.classList.remove('hidden');
-                 } else {
-                    // fallback or default for simpler data-tab values
-                    document.getElementById(targetTabId).classList.remove('hidden');
-                 }
-
-            } else {
-                 document.getElementById(targetTabId).classList.remove('hidden');
             }
 
+            const targetContent = document.getElementById(contentIdToFind);
+            if (targetContent) {
+                targetContent.classList.remove('hidden');
+            } else {
+                document.getElementById(targetTabId).classList.remove('hidden');
+            }
 
         });
     });
 }
-
 
 function setupPatientTabs() {
     setupTabs('#patient-dashboard-view');
@@ -600,11 +588,10 @@ function setupDoctorTabs() {
     setupTabs('#doctor-dashboard-view');
 }
 
-
 // Event Listeners
 function setupEventListeners() {
     showLoginBtn.addEventListener('click', () => { clearError(); showView('login'); });
-    showRegisterBtn.addEventListener('click', () => { clearError(); showView('register'); loadSpecializations(); }); // Load specs when register view shown
+    showRegisterBtn.addEventListener('click', () => { clearError(); showView('register'); loadSpecializations(); }); 
     logoutBtn.addEventListener('click', logout);
 
     loginForm.addEventListener('submit', handleLogin);
@@ -619,21 +606,19 @@ function setupEventListeners() {
             } else {
                 registerPatientForm.classList.add('hidden');
                 registerDoctorForm.classList.remove('hidden');
-                if (doctorSpecializationSelect.options.length <= 1) { // Load if not already loaded
+                if (doctorSpecializationSelect.options.length <= 1) { 
                     loadSpecializations();
                 }
             }
         });
     });
 
-    // Patient Dashboard - Schedule Appointment
     apptSpecializationSelect.addEventListener('change', handleApptSpecializationChange);
     apptDoctorSelect.addEventListener('change', handleApptDoctorChange);
     apptDateInput.addEventListener('change', handleApptDateChange);
     scheduleAppointmentForm.addEventListener('submit', handleBookAppointment);
 
 }
-
 
 // Initialization
 function initApp() {
@@ -644,11 +629,8 @@ function initApp() {
     if (token && storedUser) {
         try {
             currentUser = JSON.parse(storedUser);
-            currentUser.token = token; // Add token back to currentUser object
-             // Verify token by fetching user data, or just proceed if confident.
-            // For simplicity, we'll proceed and let API calls fail if token is bad.
-            // A better approach is to call fetchCurrentUser() here.
-            fetchCurrentUser(); // This will verify the token and load the correct dashboard
+            currentUser.token = token; 
+            fetchCurrentUser(); 
         } catch(e) {
             console.error("Error parsing stored user, logging out.");
             logout();
@@ -660,4 +642,3 @@ function initApp() {
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
-
