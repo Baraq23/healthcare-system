@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Date, DateTime
 from sqlalchemy.sql import func
-from database import SessionLocal, Base  # Direct import
+from database import Base
 
 class Patient(Base):
     __tablename__ = "patients"
@@ -13,4 +13,5 @@ class Patient(Base):
     email = Column(String(100), unique=True, nullable=False)
     phone = Column(String(20), nullable=False)
     address = Column(String(200), nullable=True)
+    password = Column(String(255), nullable=False)  # Store hashed password
     created_at = Column(DateTime(timezone=True), server_default=func.now())

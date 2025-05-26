@@ -66,11 +66,11 @@ def create_appointment(appointment: AppointmentCreateModel, db: Session = Depend
         logger.info(f"Appointment created: ID={db_appointment.id}, Doctor={appointment.doctor_id}, Patient={appointment.patient_id}")
         return db_appointment
     except ValueError as e:
-        logger.error(f"Error creating appointment: {str(e)}")
-        raise HTTPException(status_code=409, detail=str(e))
+        logger.error(f"Error: {str(e)}")
+        raise HTTPException(status_code=49, detail=str(e))
     except Exception as e:
-        logger.error(f"Unexpected error creating appointment: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"Error: {str(e)}")
+        raise HTTPException(status_code=419, detail="Time slot already booked. Please try a different time.")
 
 @router.get("/patient/{patient_id}", response_model=List[AppointmentResponseModel])
 def get_patient_appointments(patient_id: int, db: Session = Depends(get_db)):

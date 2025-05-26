@@ -1,120 +1,92 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import logging
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database import get_db
-from models.doctor import Doctor as DoctorModel
-from schemas.doctor import DoctorCreate as DoctorCreateSchema
-from schemas.doctor import DoctorUpdate as DoctorUpdateSchema
-from schemas.doctor import DoctorResponse as DoctorResponseSchema
-from sqlalchemy.exc import IntegrityError
-from models.specialization import Specialization as SpecializationModel
-from utils.helper import (
-    doctor_exists, get_doctor_by_id,
-    patient_exists, get_patient_by_id,
-    get_specialization_by_name
-)
+from typing import List
 
+from database import get_db
+from models.doctor import Doctor
+from models.specialization import Specialization
+from schemas.doctor import DoctorCreate, DoctorResponse, DoctorUpdate
+from utils.helper import get_specialization_by_name, specialization_exists_by_name, hash_password
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/doctors", tags=["doctors"])
 
-def get_specialization_by_name(db: Session, name: str):
-    spec = db.query(SpecializationModel).filter(SpecializationModel.name.ilike(name)).first()
-    if not spec:
-        raise HTTPException(status_code=404, detail=f"Specialization '{name}' not found")
-    return spec
-
-# ----------------------------
-# Routes
-# ----------------------------
-
-# Create new doctor
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=DoctorResponseSchema)
-def create_doctor(doctor: DoctorCreateSchema, db: Session = Depends(get_db)):
+@router.post("/", response_model=DoctorResponse)
+def create_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
     """
-    Create a new doctor.
-    Required fields: first_name, last_name, date_of_birth, gender, specialization_name, email, phone
-    Optional: address
+    Create a new doctor with hashed password.
     """
-    spec = get_specialization_by_name(db, doctor.specialization_name)
-    try:
-        db_doctor = DoctorModel(
-            **doctor.model_dump(exclude={"specialization_name"}),
-            specialization_id=spec.id
-        )
-        db.add(db_doctor)
-        db.commit()
-        db.refresh(db_doctor)
-        return db_doctor
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=400, detail="Email already exists.")
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=f"Error: {str(e)}")
+    # Check if email is already in use
+    if db.query(Doctor).filter(Doctor.email == doctor.email).first():
+        raise HTTPException(status_code=409, detail="Email already registered")
 
-# Get all doctors
-@router.get("/", response_model=list[DoctorResponseSchema])
-def get_all_doctors(
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db)
-):
-    """
-    Retrieve all doctors with pagination.
-    - skip: Number of records to skip (default 0)
-    - limit: Maximum records to return (default 100)
-    """
-    doctors = db.query(DoctorModel).offset(skip).limit(limit).all()
-    return doctors
+    # Resolve specialization_name to specialization_id
+    specialization = get_specialization_by_name(db, doctor.specialization_name)
+    if not specialization:
+        raise HTTPException(status_code=404, detail="Specialization not found")
 
-# Get single doctor by ID
-@router.get("/{doctor_id}", response_model=DoctorResponseSchema)
+    # Prepare doctor data
+    doctor_data = doctor.model_dump(exclude={"password", "specialization_name"})
+    doctor_data["specialization_id"] = specialization.id
+    doctor_data["password"] = hash_password(doctor.password)  # Hash password
+
+    # Create and save doctor
+    db_doctor = Doctor(**doctor_data)
+    db.add(db_doctor)
+    db.commit()
+    db.refresh(db_doctor)
+    logger.info(f"Doctor created: ID={db_doctor.id}, Email={doctor.email}")
+    return db_doctor
+
+@router.get("/{doctor_id}", response_model=DoctorResponse)
 def get_doctor(doctor_id: int, db: Session = Depends(get_db)):
-    """Retrieve a specific doctor by ID"""
-    doctor = get_doctor_by_id(db, doctor_id)
+    """
+    Retrieve a doctor by ID.
+    """
+    doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
     if not doctor:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Doctor with id {doctor_id} not found")
+        raise HTTPException(status_code=404, detail="Doctor not found")
     return doctor
 
-# Update doctor
-@router.put("/{doctor_id}", response_model=DoctorResponseSchema)
-def update_doctor(
-    doctor_id: int,
-    doctor_data: DoctorUpdateSchema,
-    db: Session = Depends(get_db)
-):
+@router.get("/", response_model=List[DoctorResponse])
+def get_all_doctors(db: Session = Depends(get_db)):
     """
-    Update doctor information (partial update supported).
-    Only provided fields will be updated.
+    Retrieve all doctors.
     """
-    if not doctor_exists(db, doctor_id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Doctor with id {doctor_id} not found")
+    return db.query(Doctor).all()
 
-    doctor = get_doctor_by_id(db, doctor_id)
-    update_data = doctor_data.model_dump(exclude_unset=True)
-    try:
-        # Handle specialization_name separately
-        specialization_name = update_data.pop("specialization_name", None)
-        for key, value in update_data.items():
-            setattr(doctor, key, value)
+@router.put("/{doctor_id}", response_model=DoctorResponse)
+def update_doctor(doctor_id: int, doctor_update: DoctorUpdate, db: Session = Depends(get_db)):
+    """
+    Update a doctor's details, including password if provided.
+    """
+    db_doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
+    if not db_doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
 
-        if specialization_name:
-            spec = get_specialization_by_name(db, specialization_name)
-            doctor.specialization = spec
+    update_data = doctor_update.model_dump(exclude_unset=True)
+    if "specialization_name" in update_data:
+        specialization = get_specialization_by_name(db, update_data["specialization_name"])
+        if not specialization:
+            raise HTTPException(status_code=404, detail="Specialization not found")
+        update_data["specialization_id"] = specialization.id
+        del update_data["specialization_name"]
 
-        db.commit()
-        db.refresh(doctor)
-        return doctor
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=400, detail="Email already exists.")
+    if "password" in update_data:
+        update_data["password"] = hash_password(update_data["password"])
 
-# Delete doctor
-@router.delete("/{doctor_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_doctor(doctor_id: int, db: Session = Depends(get_db)):
-    """Delete a doctor by ID"""
-    doctor = get_doctor_by_id(db, doctor_id)
-    if not doctor:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Doctor with id {doctor_id} not found")
-    db.delete(doctor)
+    if "email" in update_data and update_data["email"] != db_doctor.email:
+        if db.query(Doctor).filter(Doctor.email == update_data["email"]).first():
+            raise HTTPException(status_code=409, detail="Email already registered")
+
+    for key, value in update_data.items():
+        setattr(db_doctor, key, value)
+
     db.commit()
-    return
+    db.refresh(db_doctor)
+    logger.info(f"Doctor updated: ID={doctor_id}")
+    return db_doctor

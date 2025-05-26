@@ -1,116 +1,78 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+import logging
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from typing import List
 
 from database import get_db
-from utils.helper import patient_exists, get_patient_by_id
-from models.patient import Patient as PatientModel
-from schemas.patient import (
-    Patient as PatientSchema,
-    PatientCreate as PatientCreateSchema,
-    PatientUpdate as PatientUpdateSchema    
-)
+from models.patient import Patient
+from schemas.patient import PatientCreate, PatientResponse, PatientUpdate
+from utils.helper import hash_password
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/patients", tags=["patients"])
 
-# Create new patient
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=PatientSchema)
-def create_patient(patient: PatientCreateSchema, db: Session = Depends(get_db)):
+@router.post("/", response_model=PatientResponse)
+def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
     """
-    Create a new patient record.
-    Required fields: first_name, last_name, date_of_birth, gender, email, phone
-    Optional: address
+    Create a new patient with hashed password.
     """
-    try:
-        db_patient = PatientModel(**patient.model_dump())
-        db.add(db_patient)
-        db.commit()
-        db.refresh(db_patient)
-        return db_patient
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail="Email already exists."
-        )
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail=f"Error: {str(e)}"
-        )
+    # Check if email is already in use
+    if db.query(Patient).filter(Patient.email == patient.email).first():
+        raise HTTPException(status_code=409, detail="Email already registered")
 
-# Get all patients
-@router.get("/", response_model=List[PatientSchema])
-def get_all_patients(
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db)
-):
-    """
-    Retrieve all patients with pagination.
-    - skip: Number of records to skip (default 0)
-    - limit: Maximum records to return (default 100)
-    """
-    patients = db.query(PatientModel).offset(skip).limit(limit).all()
-    return patients
+    # Prepare patient data
+    patient_data = patient.model_dump(exclude={"password"})
+    patient_data["password"] = hash_password(patient.password)  # Hash password
 
-# Get single patient by ID
-@router.get("/{patient_id}", response_model=PatientSchema)
+    # Create and save patient
+    db_patient = Patient(**patient_data)
+    db.add(db_patient)
+    db.commit()
+    db.refresh(db_patient)
+    logger.info(f"Patient created: ID={db_patient.id}, Email={patient.email}")
+    return db_patient
+
+@router.get("/{patient_id}", response_model=PatientResponse)
 def get_patient(patient_id: int, db: Session = Depends(get_db)):
-    """Retrieve a specific patient by ID"""
-    patient = get_patient_by_id(db, patient_id)
+    """
+    Retrieve a patient by ID.
+    """
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Patient with id {patient_id} not found"
-        )
+        raise HTTPException(status_code=404, detail="Patient not found")
     return patient
 
-# Update patient
-@router.put("/{patient_id}", response_model=PatientSchema)
-def update_patient(
-    patient_id: int,
-    patient_data: PatientUpdateSchema,
-    db: Session = Depends(get_db)
-):
+@router.get("/", response_model=List[PatientResponse])
+def get_all_patients(db: Session = Depends(get_db)):
     """
-    Update patient information (partial update supported).
-    Only provided fields will be updated.
+    Retrieve all patients.
     """
-    if not patient_exists(db, patient_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Patient with id {patient_id} not found"
-        )
+    return db.query(Patient).all()
 
-    patient = get_patient_by_id(db, patient_id)
-    update_data = patient_data.model_dump(exclude_unset=True)
-    try:
-        for key, value in update_data.items():
-            setattr(patient, key, value)
-        db.commit()
-        db.refresh(patient)
-        return patient
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail="Email already exists."
-        )
+@router.put("/{patient_id}", response_model=PatientResponse)
+def update_patient(patient_id: int, patient_update: PatientUpdate, db: Session = Depends(get_db)):
+    """
+    Update a patient's details, including password if provided.
+    """
+    db_patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not db_patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
 
-# Delete patient
-@router.delete("/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_patient(patient_id: int, db: Session = Depends(get_db)):
-    """Delete a patient by ID"""
-    patient = get_patient_by_id(db, patient_id)
-    if not patient:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Patient with id {patient_id} not found"
-        )
-    db.delete(patient)
+    update_data = patient_update.model_dump(exclude_unset=True)
+    if "password" in update_data:
+        update_data["password"] = hash_password(update_data["password"])
+
+    if "email" in update_data and update_data["email"] != db_patient.email:
+        if db.query(Patient).filter(Patient.email == update_data["email"]).first():
+            raise HTTPException(status_code=409, detail="Email already registered")
+
+    for key, value in update_data.items():
+        setattr(db_patient, key, value)
+
     db.commit()
-    return
+    db.refresh(db_patient)
+    logger.info(f"Patient updated: ID={patient_id}")
+    return db_patient
