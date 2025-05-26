@@ -1,0 +1,264 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f6;
+    color: #333;
+    line-height: 1.6;
+}
+
+header {
+    background-color: #007bff;
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+nav button.nav-button, .button {
+    background-color: #0056b3;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    margin-left: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
+}
+
+nav button.nav-button:hover, .button:hover {
+    background-color: #004085;
+}
+
+#user-greeting {
+    margin-right: 1rem;
+    font-size: 0.9rem;
+}
+
+main {
+    padding: 2rem;
+    max-width: 900px;
+    margin: 2rem auto;
+}
+
+.view {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
+}
+
+.card { /* Alias for .view for semantic clarity if needed elsewhere */ }
+
+.hidden {
+    display: none !important;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="date"],
+.form-group input[type="tel"],
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+.form-group input[type="radio"] {
+    margin-right: 0.3rem;
+}
+.form-group label input[type="radio"] { /* For aligning radio buttons with their labels better */
+    vertical-align: middle;
+}
+
+
+.button.primary {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+.button.primary:hover {
+    background-color: #218838;
+}
+
+.button.secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+.button.secondary:hover {
+    background-color: #5a6268;
+}
+
+.button.danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+.button.danger:hover {
+    background-color: #c82333;
+}
+
+
+#loading-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background-color: #ffc107;
+    color: #333;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+footer {
+    text-align: center;
+    padding: 1rem;
+    background-color: #e9ecef;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 2rem;
+}
+
+.dashboard-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+.dashboard-section:last-child {
+    border-bottom: none;
+}
+
+.tabs {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #ccc;
+}
+
+.tab-button {
+    padding: 0.5rem 1rem;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-right: 0.5rem;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-button.active {
+    border-bottom-color: #007bff;
+    font-weight: bold;
+}
+
+.tab-content ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.tab-content li {
+    padding: 0.75rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    background-color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tab-content li .details {
+    flex-grow: 1;
+}
+.tab-content li .actions button {
+    margin-left: 0.5rem;
+}
+
+
+#time-slots-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.time-slot-button {
+    padding: 0.5rem 1rem;
+    border: 1px solid #007bff;
+    background-color: white;
+    color: #007bff;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.time-slot-button:hover {
+    background-color: #e7f3ff;
+}
+.time-slot-button.booked {
+    background-color: #e9ecef;
+    color: #6c757d;
+    border-color: #ced4da;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+.time-slot-button.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        padding: 1rem;
+    }
+    header h1 {
+        margin-bottom: 0.5rem;
+    }
+    nav {
+        margin-top: 0.5rem;
+    }
+    main {
+        padding: 1rem;
+    }
+    .view {
+        padding: 1.5rem;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="password"],
+    .form-group input[type="date"],
+    .form-group input[type="tel"],
+    .form-group select {
+        font-size: 0.9rem;
+    }
+}
+

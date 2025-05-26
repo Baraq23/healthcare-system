@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Booking</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Appointment Booking System</h1>
+        <nav id="auth-nav">
+            <button id="show-login-btn" class="nav-button">Login</button>
+            <button id="show-register-btn" class="nav-button">Register</button>
+        </nav>
+        <nav id="user-nav" class="hidden">
+            <span id="user-greeting"></span>
+            <button id="logout-btn" class="nav-button">Logout</button>
+        </nav>
+    </header>
+
+    <main>
+        <div id="loading-indicator" class="hidden">Loading...</div>
+        <div id="error-message-area" class="error-message hidden"></div>
+
+        <!-- Login View -->
+        <section id="login-view" class="view card">
+            <h2>Login</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">Email:</label>
+                    <input type="email" id="login-email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password:</label>
+                    <input type="password" id="login-password" name="password" required>
+                </div>
+                <button type="submit" class="button primary">Login</button>
+            </form>
+        </section>
+
+        <!-- Registration View -->
+        <section id="register-view" class="view card hidden">
+            <h2>Register</h2>
+            <div class="form-group">
+                <label>Register as:</label>
+                <label><input type="radio" name="userType" value="patient" checked> Patient</label>
+                <label><input type="radio" name="userType" value="doctor"> Doctor</label>
+            </div>
+
+            <form id="register-patient-form">
+                <h3>Patient Registration</h3>
+                <div class="form-group">
+                    <label for="patient-firstName">First Name:</label>
+                    <input type="text" id="patient-firstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="patient-lastName">Last Name:</label>
+                    <input type="text" id="patient-lastName" name="lastName" required>
+                </div>
+                <div class="form-group">
+                    <label for="patient-dob">Date of Birth:</label>
+                    <input type="date" id="patient-dob" name="dob" required>
+                </div>
+                <div class="form-group">
+                    <label for="patient-gender">Gender:</label>
+                    <select id="patient-gender" name="gender" required>
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="patient-email">Email:</label>
+                    <input type="email" id="patient-email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="patient-phone">Phone Number:</label>
+                    <input type="tel" id="patient-phone" name="phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="patient-password">Password:</label>
+                    <input type="password" id="patient-password" name="password" required>
+                </div>
+                <button type="submit" class="button primary">Register Patient</button>
+            </form>
+
+            <form id="register-doctor-form" class="hidden">
+                <h3>Doctor Registration</h3>
+                <div class="form-group">
+                    <label for="doctor-firstName">First Name:</label>
+                    <input type="text" id="doctor-firstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="doctor-lastName">Last Name:</label>
+                    <input type="text" id="doctor-lastName" name="lastName" required>
+                </div>
+                <div class="form-group">
+                    <label for="doctor-dob">Date of Birth:</label>
+                    <input type="date" id="doctor-dob" name="dob" required>
+                </div>
+                 <div class="form-group">
+                    <label for="doctor-gender">Gender:</label>
+                    <select id="doctor-gender" name="gender" required>
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="doctor-specialization">Specialization:</label>
+                    <select id="doctor-specialization" name="specializationId" required>
+                        <option value="">Loading specializations...</option>
+                        <!-- Options populated by API -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="doctor-email">Email:</label>
+                    <input type="email" id="doctor-email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="doctor-phone">Phone Number:</label>
+                    <input type="tel" id="doctor-phone" name="phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="doctor-password">Password:</label>
+                    <input type="password" id="doctor-password" name="password" required>
+                </div>
+                <button type="submit" class="button primary">Register Doctor</button>
+            </form>
+        </section>
+
+        <!-- Patient Dashboard View -->
+        <section id="patient-dashboard-view" class="view card hidden">
+            <h2>Patient Dashboard</h2>
+            <div class="dashboard-section">
+                <h3>Schedule an Appointment</h3>
+                <form id="schedule-appointment-form">
+                    <div class="form-group">
+                        <label for="appt-specialization">Select Specialization:</label>
+                        <select id="appt-specialization" name="specializationId" required>
+                            <option value="">Select Specialization</option>
+                            <!-- Populated by API -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appt-doctor">Select Doctor:</label>
+                        <select id="appt-doctor" name="doctorId" required disabled>
+                            <option value="">Select Doctor</option>
+                            <!-- Populated after specialization selection -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appt-date">Select Date:</label>
+                        <input type="date" id="appt-date" name="date" required disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Available Time Slots:</label>
+                        <div id="time-slots-container">
+                            <!-- Time slots will be generated here -->
+                            <p>Please select a doctor and date to see availability.</p>
+                        </div>
+                    </div>
+                     <input type="hidden" id="appt-time" name="time">
+                    <button type="submit" id="book-appointment-btn" class="button primary" disabled>Book Appointment</button>
+                </form>
+            </div>
+            <div class="dashboard-section">
+                <h3>My Appointments</h3>
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="patient-upcoming">Upcoming</button>
+                    <button class="tab-button" data-tab="patient-completed">Completed</button>
+                    <button class="tab-button" data-tab="patient-cancelled">Cancelled</button>
+                </div>
+                <div id="patient-upcoming-appointments" class="tab-content"></div>
+                <div id="patient-completed-appointments" class="tab-content hidden"></div>
+                <div id="patient-cancelled-appointments" class="tab-content hidden"></div>
+            </div>
+        </section>
+
+        <!-- Doctor Dashboard View -->
+        <section id="doctor-dashboard-view" class="view card hidden">
+            <h2>Doctor Dashboard</h2>
+             <div class="dashboard-section">
+                <h3>My Appointments</h3>
+                 <div class="tabs">
+                    <button class="tab-button active" data-tab="doctor-upcoming">Upcoming</button>
+                    <button class="tab-button" data-tab="doctor-completed">Completed</button>
+                    <button class="tab-button" data-tab="doctor-cancelled">Cancelled</button>
+                </div>
+                <div id="doctor-upcoming-appointments" class="tab-content"></div>
+                <div id="doctor-completed-appointments" class="tab-content hidden"></div>
+                <div id="doctor-cancelled-appointments" class="tab-content hidden"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Appointment Booking System</p>
+    </footer>
+
+    <script type="importmap">
+    {
+        "imports": {}
+    }
+    </script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
+
