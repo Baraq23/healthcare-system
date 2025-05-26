@@ -11,6 +11,8 @@ The backend is built using Python FastAPI for the API framework, ORM-Alchemy for
     healthcare-system/
     ├── venv/                 # Virtual environment
     ├── routers/              # API endpoints
+    ├── core/                 # redis files
+    ├── utils/                # helper funtion
     ├── models/               # Database models
     ├── schemas/              # Pydantic schemas
     ├── main.py               # FastAPI app instance
@@ -78,11 +80,9 @@ The backend is built using Python FastAPI for the API framework, ORM-Alchemy for
 ### Appointments
 
 - **POST /appointments**: Create a new appointment.
-- **GET /appointments**: Get all appointments.
-- **GET /appointments/{appointment_id}**: Get a specific appointment by ID.
 - **GET /appointments/doctors/{doctor_id}**: Get records of appointments linked to a doctor.
 - **GET /appointments/patient/{patient_id}**: Get records of appointments linked to a patient.
-- **GET /appointments/availability/{doctor_id}**: Get a list of available time slots for a doctor with specific a ID.
+- **GET /appointments/doctor/{doctor_id}/available-slots**: Get a list of available time slots for a doctor with specific a ID.
 
 
 
