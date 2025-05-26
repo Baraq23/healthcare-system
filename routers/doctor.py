@@ -7,7 +7,7 @@ from schemas.doctor import DoctorUpdate as DoctorUpdateSchema
 from schemas.doctor import DoctorResponse as DoctorResponseSchema
 from sqlalchemy.exc import IntegrityError
 from models.specialization import Specialization as SpecializationModel
-from utils.helpers import (
+from utils.helper import (
     doctor_exists, get_doctor_by_id,
     patient_exists, get_patient_by_id,
     get_specialization_by_name

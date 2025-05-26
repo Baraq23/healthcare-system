@@ -8,7 +8,7 @@ from schemas.specialization import Specialization as SpecializationSchema
 
 
 
-from utils.helpers import (
+from utils.helper import (
     specialization_exists_by_name,
     get_specialization_by_id_or_404,
 )

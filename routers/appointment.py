@@ -1,83 +1,144 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import date, time, datetime, timedelta, timezone
+from datetime import time, datetime, timedelta, timezone, date
 
 from database import get_db
-from models.appointment import Appointment as AppointmentModel
-from models.appointment import AppointmentStatus as AppointmentStatusModel
-from core.redis import (
-    acquire_doctor_lock, release_doctor_lock,
-    acquire_patient_lock, release_patient_lock
-)
-from schemas.appointment import (
-    AppointmentCreate as AppointmentCreateModel,
-    AppointmentResponse as AppointmentResponseModel,
-    Appointment as AppointmentModel, 
-)
-
-from utils.helpers import (
+from models.appointment import Appointment as AppointmentModel, AppointmentStatus as AppointmentStatusModel
+from schemas.appointment import AppointmentCreate as AppointmentCreateModel, AppointmentResponse as AppointmentResponseModel
+from utils.helper import (
     doctor_exists,
     patient_exists,
     check_doctor_availability,
     patient_has_future_appointment_with_doctor,
+    check_patient_available_at_time,
+    get_all_appointments_for_patient,
+    get_all_appointments_for_doctor,
+    get_booked_slots_for_doctor,
+    generate_available_slots,
 )
+from services.appointment_service import create_appointment_with_lock
 
-from core.redis import (
-    acquire_doctor_lock, release_doctor_lock,
-    acquire_patient_lock, release_patient_lock
-)
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
 @router.post("/", response_model=AppointmentResponseModel)
 def create_appointment(appointment: AppointmentCreateModel, db: Session = Depends(get_db)):
+    """
+    Schedule a new appointment if doctor and patient are available.
+    """
     now = datetime.now(timezone.utc)
-    scheduled_datetime_utc = appointment.scheduled_datetime.astimezone(timezone.utc)
+    scheduled_utc = appointment.scheduled_datetime.astimezone(timezone.utc)
 
-    # Check if scheduled_datetime is in the past
-    if scheduled_datetime_utc < now:
-        raise HTTPException(status_code=400, detail="Appointments can only be scheduled for future time slots.")
+    # Validate future time and working hours
+    if scheduled_utc < now:
+        raise HTTPException(status_code=400, detail="Appointments must be scheduled for future time slots.")
+    if not (time(9, 0) <= scheduled_utc.time() < time(17, 0)):
+        raise HTTPException(status_code=400, detail="Appointments must be scheduled between 09:00 and 17:00.")
+    
+    # Validate slot alignment (30-minute intervals)
+    if scheduled_utc.minute % 30 != 0 or scheduled_utc.second != 0:
+        raise HTTPException(status_code=400, detail="Appointments must be scheduled on 30-minute intervals (e.g., 09:00, 09:30).")
 
-    # Check working hours (optional, but recommended)
-    appointment_time = scheduled_datetime_utc.time()
-    if not (time(9, 0) <= appointment_time < time(17, 0)):
-        raise HTTPException(status_code=400, detail="Appointments can only be scheduled between 0900hrs and 1700hrs.")
-
-    # Check doctor and patient existence FIRST
+    # Check doctor and patient existence
     if not doctor_exists(db, appointment.doctor_id):
         raise HTTPException(status_code=404, detail="Doctor not found")
     if not patient_exists(db, appointment.patient_id):
         raise HTTPException(status_code=404, detail="Patient not found")
 
-    # Check if patient already has a future appointment with this doctor
+    # Check for existing appointments
     if patient_has_future_appointment_with_doctor(db, appointment.patient_id, appointment.doctor_id, now):
-        raise HTTPException(status_code=409, detail="You already have a future appointment with this doctor. Please cancel or complete it before booking another.")
-
-    # Try to acquire both locks
-    doctor_lock_acquired = acquire_doctor_lock(appointment.doctor_id, appointment.scheduled_datetime)
-    patient_lock_acquired = acquire_patient_lock(appointment.patient_id, appointment.scheduled_datetime)
-
-    if not doctor_lock_acquired:
-        raise HTTPException(status_code=409, detail="Doctor is already booked at this time. Please try another slot.")
-    if not patient_lock_acquired:
-        release_doctor_lock(appointment.doctor_id, appointment.scheduled_datetime)
-        raise HTTPException(status_code=409, detail="You already have an appointment at this time. Please check your schedule.")
+        raise HTTPException(
+            status_code=409,
+            detail="You already have a future appointment with this doctor. Please cancel or complete it first."
+        )
+    if not check_patient_available_at_time(db, appointment.patient_id, scheduled_utc):
+        raise HTTPException(status_code=409, detail="You already have an appointment at this time.")
 
     try:
-        # Check for doctor conflicts (buffered window)
-        start_time = appointment.scheduled_datetime - timedelta(minutes=59)
-        end_time = appointment.scheduled_datetime + timedelta(minutes=59)
-        if not check_doctor_availability(db, appointment.doctor_id, start_time, end_time):
-            raise HTTPException(status_code=409, detail="Time slot already booked.")
-
-        # Create and save the appointment
-        db_appointment = AppointmentModel(**appointment.model_dump())
-        db.add(db_appointment)
-        db.commit()
-        db.refresh(db_appointment)
+        # Delegate to service layer for creation with locking
+        appointment_data = appointment.model_dump()
+        db_appointment = create_appointment_with_lock(db, appointment_data)
+        logger.info(f"Appointment created: ID={db_appointment.id}, Doctor={appointment.doctor_id}, Patient={appointment.patient_id}")
         return db_appointment
+    except ValueError as e:
+        logger.error(f"Error creating appointment: {str(e)}")
+        raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        logger.error(f"Unexpected error creating appointment: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
-    finally:
-        release_doctor_lock(appointment.doctor_id, appointment.scheduled_datetime)
-        release_patient_lock(appointment.patient_id, appointment.scheduled_datetime)
+@router.get("/patient/{patient_id}", response_model=List[AppointmentResponseModel])
+def get_patient_appointments(patient_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieve all appointments for a patient.
+    """
+    if not patient_exists(db, patient_id):
+        raise HTTPException(status_code=404, detail="Patient not found")
+    appointments = get_all_appointments_for_patient(db, patient_id)
+    logger.info(f"Retrieved {len(appointments)} appointments for patient ID={patient_id}")
+    return appointments
+
+@router.get("/doctor/{doctor_id}", response_model=List[AppointmentResponseModel])
+def get_doctor_appointments(doctor_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieve all appointments for a doctor.
+    """
+    if not doctor_exists(db, doctor_id):
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    appointments = get_all_appointments_for_doctor(db, doctor_id)
+    logger.info(f"Retrieved {len(appointments)} appointments for doctor ID={doctor_id}")
+    return appointments
+
+@router.put("/{appointment_id}/cancel", response_model=AppointmentResponseModel)
+def cancel_appointment(appointment_id: int, db: Session = Depends(get_db)):
+    """
+    Cancel an existing appointment.
+    """
+    appointment = db.query(AppointmentModel).filter(AppointmentModel.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    if appointment.status == AppointmentStatusModel.CANCELLED:
+        raise HTTPException(status_code=400, detail="Appointment is already cancelled")
+    if appointment.status == AppointmentStatusModel.COMPLETED:
+        raise HTTPException(status_code=400, detail="Cannot cancel a completed appointment")
+
+    appointment.status = AppointmentStatusModel.CANCELLED
+    db.commit()
+    db.refresh(appointment)
+    logger.info(f"Appointment cancelled: ID={appointment_id}")
+    return appointment
+
+@router.get("/doctor/{doctor_id}/available-slots", response_model=List[datetime])
+def get_available_slots(
+    doctor_id: int,
+    date: date,
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieve available appointment slots for a doctor on a given date.
+    """
+    if not doctor_exists(db, doctor_id):
+        raise HTTPException(status_code=404, detail="Doctor not found")
+
+    now = datetime.now(timezone.utc)
+    start_time = datetime.combine(date, time(9, 0)).astimezone(timezone.utc)
+    end_time = datetime.combine(date, time(17, 0)).astimezone(timezone.utc)
+
+    if start_time < now:
+        raise HTTPException(status_code=400, detail="Cannot retrieve slots for past dates")
+
+    booked_slots = set(get_booked_slots_for_doctor(db, doctor_id, start_time, end_time))
+    slots = generate_available_slots(
+        booked_slots=booked_slots,
+        working_start=start_time,
+        working_end=end_time,
+        slot_interval_minutes=30,
+        now=now
+    )
+    logger.info(f"Retrieved {len(slots)} available slots for doctor ID={doctor_id} on {date}")
+    return slots

@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from typing import List
 
 from database import get_db
-from utils.helpers import patient_exists, get_patient_by_id
+from utils.helper import patient_exists, get_patient_by_id
 from models.patient import Patient as PatientModel
 from schemas.patient import (
     Patient as PatientSchema,
