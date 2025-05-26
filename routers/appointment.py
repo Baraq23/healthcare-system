@@ -61,6 +61,25 @@ def create_appointment(appointment: AppointmentCreateModel, db: Session = Depend
         )
     
     scheduled_datetime = appointment.scheduled_datetime
+
+    # Check if patient already has a future appointment with the same doctor
+    # (excluding cancelled or completed)
+    future_appointments = db.query(AppointmentModel).filter(
+        AppointmentModel.patient_id == appointment.patient_id,
+        AppointmentModel.doctor_id == appointment.doctor_id,
+        AppointmentModel.scheduled_datetime >= now,
+        AppointmentModel.status.not_in([
+            AppointmentStatusModel.CANCELLED,
+            AppointmentStatusModel.COMPLETED
+        ])
+    ).all()
+
+    if future_appointments:
+        raise HTTPException(
+            status_code=409,
+            detail="You already have a future appointment with this doctor. Please cancel or complete it before booking another."
+        )
+
     # Try to acquire both locks
     doctor_lock_acquired = acquire_doctor_lock(appointment.doctor_id, scheduled_datetime)
     patient_lock_acquired = acquire_patient_lock(appointment.patient_id, scheduled_datetime)
