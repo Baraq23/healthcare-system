@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime, timedelta, timezone
+from datetime import date, time, datetime, timedelta, timezone
 
 from database import get_db
 from models.appointment import Appointment as AppointmentModel
@@ -40,6 +40,14 @@ def create_appointment(appointment: AppointmentCreateModel, db: Session = Depend
         raise HTTPException(
             status_code=400,
             detail="Appointments can only be scheduled for future time slots."
+        )
+    
+    # Extract the time part (hour, minute)
+    appointment_time = scheduled_datetime_utc.time()
+    if not (time(9, 0) <= appointment_time < time(17, 0)):
+        raise HTTPException(
+            status_code=400,
+            detail="Appointments can only be scheduled between 0900hrs and 1700hrs."
         )
     
     scheduled_datetime = appointment.scheduled_datetime
@@ -116,30 +124,77 @@ def update_appointment_status(
     db.refresh(appointment)
     return appointment
 
+
 @router.get("/availability/{doctor_id}", response_model=AvailabilityResponseModel)
 def get_availability(
     doctor_id: int,
-    date: datetime,
+    date: date,  # Changed to date, not datetime
     db: Session = Depends(get_db)
 ):
-    # Generate time slots for the given date
-    start_time = datetime(date.year, date.month, date.day)
+    # Check if scheduled_datetime is in the past
+    if date < datetime.now().date():
+        raise HTTPException(
+            status_code=400,
+            detail="You can only check doctor's availability for today and future time."
+        )
+        
+    # Set the start and end of the requested day (timezone-aware)
+    start_time = datetime(
+        date.year, date.month, date.day,
+        tzinfo=timezone.utc  # or your preferred timezone
+    )
     end_time = start_time + timedelta(days=1)
-    
-    # Get existing appointments
-    appointments = check_availability(db, doctor_id, start_time, end_time)
-    booked_slots = [appt.scheduled_datetime for appt in appointments]
-    
-    # Generate available slots (every 30 minutes)
+
+    # Get existing appointments (exclude cancelled)
+    appointments = db.query(AppointmentModel).filter(
+        AppointmentModel.doctor_id == doctor_id,
+        AppointmentModel.scheduled_datetime >= start_time,
+        AppointmentModel.scheduled_datetime < end_time,
+        AppointmentModel.status != "cancelled"
+    ).all()
+    booked_slots = {appt.scheduled_datetime for appt in appointments}
+
+    # Generate available slots (every 60 minutes)
     available_slots = []
     current_slot = start_time
-    while current_slot < end_time:
-        if current_slot not in booked_slots and current_slot > datetime.now():
-            available_slots.append(current_slot)
-        current_slot += timedelta(minutes=30)
-    
+    now = datetime.now(timezone.utc)
+
+    # Generate all possible slots (every 60 minutes, 9:00-17:00)
+    working_start = start_time.replace(hour=9, minute=0, second=0)
+    working_end = start_time.replace(hour=17, minute=0, second=0)
+
+    all_slots = []
+    current_slot = working_start
+    while current_slot < working_end:
+        all_slots.append(current_slot)
+        current_slot += timedelta(minutes=60)
+
+    # Filter out booked slots
+    available_slots = [slot for slot in all_slots if slot not in booked_slots]
+
+    # Optionally, filter out slots in the past
+    now = datetime.now(timezone.utc)
+    available_slots = [slot for slot in available_slots if slot >= now]
+
     return AvailabilityResponseModel(
         doctor_id=doctor_id,
         available_slots=available_slots
     )
+
+
     
+@router.get("/doctors/{doctor_id}/booked-slots", response_model=List[datetime])
+def get_doctor_booked_slots(doctor_id: int, db: Session = Depends(get_db)):
+    """
+    Returns a list of booked time slots for the given doctor.
+    """
+    # Query all appointments for the doctor (excluding cancelled)
+    appointments = db.query(AppointmentModel.scheduled_datetime).filter(
+        AppointmentModel.doctor_id == doctor_id,
+        AppointmentModel.status != "cancelled"
+    ).all()
+
+    # Extract the datetime objects
+    booked_slots = [appt.scheduled_datetime for appt in appointments]
+
+    return booked_slots
