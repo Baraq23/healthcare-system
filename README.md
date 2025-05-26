@@ -75,7 +75,21 @@ The backend is built using Python FastAPI for the API framework, ORM-Alchemy for
 - **GET /specializations**: Get all specializations.
 - **GET /specializations/{id}**: Get a specific specialization by ID.
 
+### Appointments
+
+- **POST /appointments**: Create a new appointment.
+- **GET /appointments**: Get all appointments.
+- **GET /appointments/{appointment_id}**: Get a specific appointment by ID.
+- **GET /appointments/doctors/{doctor_id}**: Get records of appointments linked to a doctor.
+- **GET /appointments/patient/{patient_id}**: Get records of appointments linked to a patient.
+- **GET /appointments/availability/{doctor_id}**: Get a list of available time slots for a doctor with specific a ID.
 
 
 
 
+
+
+
+## Future improvements:
+
+- Incorporate different hospitals to the system so that doctors can attend to patients in different hospitals that offer facilities and equipment in their field of specialization.
