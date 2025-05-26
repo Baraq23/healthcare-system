@@ -3,7 +3,11 @@ from database import Base, engine
 from routers import patient, doctor, specialization, appointment
 
 # Creating tables before creating FastAPI app
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+    print("All tables created successfully!")
+except Exception as e:
+    print(f"Error creating tables: {e}")
 
 # creating FastAPI app instance
 app = FastAPI()
