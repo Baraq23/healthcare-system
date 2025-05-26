@@ -15,5 +15,6 @@ pip install 'uvicorn[standard]'
 pip install sqlalchemy
 pip install pymysql
 pip install redis
+pip install 'passlib[bcrypt]'
 
 echo "Virtual environment setup complete! Use 'source venv/bin/activate' to activate it."
