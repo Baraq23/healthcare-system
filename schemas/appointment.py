@@ -2,18 +2,18 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
 
-class AppointmentBase(BaseModel):
+class Appointment(BaseModel):
     doctor_id: int
     patient_id: int
     scheduled_datetime: datetime
 
-class AppointmentCreate(AppointmentBase):
+class AppointmentCreate(Appointment):
     pass
 
 class AppointmentUpdate(BaseModel):
     status: str
 
-class AppointmentResponse(AppointmentBase):
+class AppointmentResponse(Appointment):
     id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
