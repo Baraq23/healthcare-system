@@ -6,7 +6,6 @@ class AppointmentBase(BaseModel):
     doctor_id: int
     patient_id: int
     scheduled_datetime: datetime
-    status: Optional[str] = None
 
 class AppointmentCreate(AppointmentBase):
     pass
@@ -17,7 +16,7 @@ class AppointmentUpdate(BaseModel):
 class AppointmentResponse(AppointmentBase):
     id: int
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
