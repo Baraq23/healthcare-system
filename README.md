@@ -59,8 +59,8 @@ The backend is built using Python FastAPI for the API framework, ORM-Alchemy for
 
 - **POST /patients**: Create a new patient.
 - **GET /patients**: Get all patients.
-- **GET /patients/{id}**: Get a specific patient by ID.
-- **PUT /patients/{id}**: Update a patient's record.
+- **GET /patients/{id}**: Get a specific patient by ID
+- **PUT /patients/{id}**: Update a patient's record. 
 - **DELETE /patients/{id}**: Delete a patient's record.
 
 ### Doctors
@@ -86,20 +86,68 @@ The backend is built using Python FastAPI for the API framework, ORM-Alchemy for
 
 
 
+## Steps to Run the API Locally
 
-## steps to run the server
+1. Fork the repository: `https://github.com/Baraq23/healthcare-system.git`
+2. Install required software:
+    - MySQL
+    - Redis server
+    - Python 3
 
-run setup_venv.sh to insta dependencies
+3. Start MySQL, log in as root, and create the database:
+
 ```bash
-    ./setup_venv.sh
+# Start MySQL service
+sudo systemctl start mysql
+
+# Log in as root user
+mysql -u root -p
+# Press Enter when prompted for password
+
+# In the MySQL terminal, run:
+CREATE DATABASE healthcaredb;
+# This creates a database where FastAPI will manage tables.
 ```
 
-to start FastApi run:
+4. Start the Redis server:
+
+```bash
+redis-server
+```
+5. Open the `healthcare-system` folder in your terminal.
+
+6. Run the setup script to create a Python virtual environment and install dependencies:
+
+```bash
+./setup_venv.sh
+```
+
+7. Activate the virtual environment:
+
+```bash
+source venv/bin/activate
+```
+
+8. Start the FastAPI server:
+
 ```bash
 uvicorn main:app --reload
+# This runs the FastAPI server locally on port 8000
 ```
+
+9. Open your browser and navigate to: `http://localhost:8000/docs` to interact with the API endpoints using Swagger UI.
+
+
+
+
+
+
+
+
+
+
 
 
 ## Future improvements:
 
-- Incorporate different hospitals to the system so that doctors can attend to patients in different hospitals that offer facilities and equipment in their field of specialization.
+- Incorporate different hospitals into the system so that doctors can attend to patients in hospitals that offer the necessary facilities and equipment in their field of specialization. This will make doctors more accessible to patients.
