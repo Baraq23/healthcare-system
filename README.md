@@ -215,9 +215,9 @@ Columns:
 
 ***Relationships***
 
-## Entity Relationship Diagram (ERD)
+ *`Entity Relationship Diagram (ERD)`*
 
-The following diagram illustrates the relationships between entities in a healthcare appointment scheduling system:
+- `The following diagram illustrates the relationships between entities in a healthcare appointment scheduling system:`
 
 ```mermaid
 erDiagram
@@ -288,8 +288,20 @@ erDiagram
 
 
 
+## Security
+
+*`User Authentications`*:
+- Users (doctors and patients) sign up with their correct personal details and also enters a password with will be used during logging. After successfull login, a JWT access tokken is issued by the server to the user which they can use to access the protected endpoints. This access tokkens expires after some set period of time wich prompt the user to login once more if they need to continue using the platform. This ensures that the user data is protected.
+
+*`API Endpoints Protection`*:
+- The protected endpoints can only be accessed by the users with valid JWT tokkens which is sent to the server together with requests everytime the user (or brower) sends a request. This access tokken is verified and the desired response is sent back.
+- The endpoints are also protected from other users such that a user cannot access another user's information is not authorised. For example a patient cannot access another patient's information. And therefore only authorised doctorcs will be able to access patient's data or medical records.
+
+*`Database`*:
+- MySQL is a very secure database for example it uses password to manage access to the databse therefore user information cannot be accessed by unauthorised parties.
+
 
 
 ## Future improvements:
-
+- User validation: such email or phone numbeer verification system will be icorporated and other important details such as ID numbers, emergency contant details, and medical insurance cover details for patients will also be include.
 - Incorporate different hospitals to the system so that doctors can attend to patients in different hospitals that offer facilities and equipment in their field of specialization, am making the doctors more accessible by the patient.
