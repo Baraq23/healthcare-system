@@ -15,9 +15,12 @@ The backend is built using Python FastAPI for the API framework, ORM-Alchemy for
     ├── utils/                # helper funtion
     ├── models/               # Database models
     ├── schemas/              # Pydantic schemas
+    ├── services/             # Appoint sevice management.
     ├── main.py               # FastAPI app instance
     ├── database.py           # DB connection
+    ├── auth.py               # Authentication functionalities.
     ├── requirements.txt      # Dependencies
+    ├── setup_venv.sh         # Dependencies installer script
     ├── .env                  # Environment variables
     ├── .gitignore            # Ignore rules
     └── README.md             # Project Documentation
@@ -150,4 +153,4 @@ uvicorn main:app --reload
 
 ## Future improvements:
 
-- Incorporate different hospitals into the system so that doctors can attend to patients in hospitals that offer the necessary facilities and equipment in their field of specialization. This will make doctors more accessible to patients.
+- Incorporate different hospitals to the system so that doctors can attend to patients in different hospitals that offer facilities and equipment in their field of specialization, am making the doctors more accessible by the patient.
