@@ -87,7 +87,17 @@ The backend is built using Python FastAPI for the API framework, ORM-Alchemy for
 
 
 
+## steps to run the server
 
+run setup_venv.sh to insta dependencies
+```bash
+    ./setup_venv.sh
+```
+
+to start FastApi run:
+```bash
+uvicorn main:app --reload
+```
 
 
 ## Future improvements:
