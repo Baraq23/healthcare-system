@@ -18,8 +18,7 @@ logger = logging.getLogger(__name__)
 # JWT settings (replace with environment variables in production)
 SECRET_KEY = "your-secret-key-please-change-this"  # Use a secure key
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
+ACCESS_TOKEN_EXPIRE_MINUTES = 180  # 3 hours
 # OAuth2 scheme for token validation
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")  # Generic token endpoint
 
