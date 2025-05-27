@@ -10,6 +10,8 @@ from schemas.patient import PatientCreate, PatientResponse, PatientUpdate
 from utils.helper import hash_password
 from auth import LoginRequest, authenticate_user, create_access_token, get_current_patient, UserType
 
+
+ACCESS_TOKEN_EXPIRE_MINUTES = 180 # 3 hours
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,10 +32,10 @@ def login_patient(login_data: LoginRequest, db: Session = Depends(get_db)):
         )
     access_token = create_access_token(
         data={"sub": str(user["id"]), "user_type": UserType.PATIENT},
-        expires_delta=timedelta(minutes=30)
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     logger.info(f"Patient logged in: ID={user['id']}, Email={user['email']}")
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"patient_id": user["id"], "access_token": access_token, "token_type": "bearer"}
 
 @router.post("/", response_model=PatientResponse)
 def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
