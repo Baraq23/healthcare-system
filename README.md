@@ -92,37 +92,176 @@ uvicorn main:app --reload
 
 
 
-## API Endpoints
+## API Documentation
 
+Base URL; http://localhost:8000 , this is the port 
 
-### Patiens
+Patients
+Login Patient
 
-- **POST /patients**: Create a new patient.
-- **GET /patients**: Get all patients.
-- **GET /patients/{id}**: Get a specific patient by ID
-- **PUT /patients/{id}**: Update a patient's record. 
-- **DELETE /patients/{id}**: Delete a patient's record.
+    Method: POST
 
-### Doctors
+    Path: /patients/login
 
-- **POST /doctors**: Create a new doctor.
-- **GET /doctors**: Get all doctors.
-- **GET /doctors/{id}**: Get a specific doctor by ID.
-- **PUT /doctors/{id}**: Update a doctor's record.
-- **DELETE /doctors/{id}**: Delete a doctor's record.
+    Description:
+    Authenticates a patient and returns a token.
 
-### Specializations
+Get All Patients
 
-- **POST /specializations**: Create a new specialization.
-- **GET /specializations**: Get all specializations.
-- **GET /specializations/{id}**: Get a specific specialization by ID.
+    Method: GET
 
-### Appointments
+    Path: /patients/
 
-- **POST /appointments**: Create a new appointment.
-- **GET /appointments/doctors/{doctor_id}**: Get records of appointments linked to a doctor.
-- **GET /appointments/patient/{patient_id}**: Get records of appointments linked to a patient.
-- **GET /appointments/doctor/{doctor_id}/available-slots**: Get a list of available time slots for a doctor with specific a ID.
+    Description:
+    Retrieves a list of all patients.
+
+Create Patient
+
+    Method: POST
+
+    Path: /patients/
+
+    Description:
+    Creates a new patient.
+
+Get Patient
+
+    Method: GET
+
+    Path: /patients/{patient_id}
+
+    Description:
+    Retrieves details of a specific patient by ID.
+
+Update Patient
+
+    Method: PUT
+
+    Path: /patients/{patient_id}
+
+    Description:
+    Updates an existing patient by ID.
+
+Doctors
+Login Doctor
+
+    Method: POST
+
+    Path: /doctors/login
+
+    Description:
+    Authenticates a doctor and returns a token.
+
+Get All Doctors
+
+    Method: GET
+
+    Path: /doctors/
+
+    Description:
+    Retrieves a list of all doctors.
+
+Create Doctor
+
+    Method: POST
+
+    Path: /doctors/
+
+    Description:
+    Creates a new doctor.
+
+Get Doctor
+
+    Method: GET
+
+    Path: /doctors/{doctor_id}
+
+    Description:
+    Retrieves details of a specific doctor by ID.
+
+Update Doctor
+
+    Method: PUT
+
+    Path: /doctors/{doctor_id}
+
+    Description:
+    Updates an existing doctor by ID.
+
+Specializations
+Create Specialization
+
+    Method: POST
+
+    Path: /specializations/
+
+    Description:
+    Creates a new specialization.
+
+Get All Specializations
+
+    Method: GET
+
+    Path: /specializations/
+
+    Description:
+    Retrieves a list of all specializations.
+
+Get Specialization
+
+    Method: GET
+
+    Path: /specializations/{specialization_id}
+
+    Description:
+    Retrieves details of a specific specialization by ID.
+
+Appointments
+Create Appointment
+
+    Method: POST
+
+    Path: /appointments/
+
+    Description:
+    Creates a new appointment.
+
+Get Patient Appointments
+
+    Method: GET
+
+    Path: /appointments/patient/{patient_id}
+
+    Description:
+    Retrieves all appointments for a specific patient.
+
+Get Doctor Appointments
+
+    Method: GET
+
+    Path: /appointments/doctor/{doctor_id}
+
+    Description:
+    Retrieves all appointments for a specific doctor.
+
+Cancel Appointment
+
+    Method: PUT
+
+    Path: /appointments/{appointment_id}/cancel
+
+    Description:
+    Cancels an existing appointment by ID.
+
+Get Available Slots
+
+    Method: GET
+
+    Path: /appointments/doctor/{doctor_id}/available-slots
+
+    Description:
+    Retrieves available time slots for a specific doctor.
+
 
 
 
@@ -305,3 +444,7 @@ erDiagram
 ## Future improvements:
 - User validation: such email or phone numbeer verification system will be icorporated and other important details such as ID numbers, emergency contant details, and medical insurance cover details for patients will also be include.
 - Incorporate different hospitals to the system so that doctors can attend to patients in different hospitals that offer facilities and equipment in their field of specialization, am making the doctors more accessible by the patient.
+
+
+
+
