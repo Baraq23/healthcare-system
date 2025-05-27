@@ -2,15 +2,15 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import time, datetime, timedelta, timezone, date
+from datetime import time, datetime, timezone, date
+from models.doctor import Doctor
 
 from database import get_db
 from models.appointment import Appointment as AppointmentModel, AppointmentStatus as AppointmentStatusModel
 from schemas.appointment import AppointmentCreate as AppointmentCreateModel, AppointmentResponse as AppointmentResponseModel
 from utils.helper import (
     doctor_exists,
-    patient_exists,
-    check_doctor_availability,
+    patient_exists,    
     patient_has_future_appointment_with_doctor,
     check_patient_available_at_time,
     get_all_appointments_for_patient,
@@ -19,6 +19,7 @@ from utils.helper import (
     generate_available_slots,
 )
 from services.appointment_service import create_appointment_with_lock
+from auth import get_current_user, get_current_doctor, get_current_patient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -27,9 +28,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
 @router.post("/", response_model=AppointmentResponseModel)
-def create_appointment(appointment: AppointmentCreateModel, db: Session = Depends(get_db)):
+def create_appointment(
+    appointment: AppointmentCreateModel,
+    db: Session = Depends(get_db),
+    current_patient: dict = Depends(get_current_patient)
+):
     """
-    Schedule a new appointment if doctor and patient are available.
+    Schedule a new appointment if doctor and patient are available (requires patient authentication).
     """
     now = datetime.now(timezone.utc)
     scheduled_utc = appointment.scheduled_datetime.astimezone(timezone.utc)
@@ -50,6 +55,10 @@ def create_appointment(appointment: AppointmentCreateModel, db: Session = Depend
     if not patient_exists(db, appointment.patient_id):
         raise HTTPException(status_code=404, detail="Patient not found")
 
+    # Ensure the patient is booking for themselves
+    if appointment.patient_id != current_patient.id:
+        raise HTTPException(status_code=403, detail="Not authorized to book for another patient")
+
     # Check for existing appointments
     if patient_has_future_appointment_with_doctor(db, appointment.patient_id, appointment.doctor_id, now):
         raise HTTPException(
@@ -66,42 +75,68 @@ def create_appointment(appointment: AppointmentCreateModel, db: Session = Depend
         logger.info(f"Appointment created: ID={db_appointment.id}, Doctor={appointment.doctor_id}, Patient={appointment.patient_id}")
         return db_appointment
     except ValueError as e:
-        logger.error(f"Error: {str(e)}")
-        raise HTTPException(status_code=49, detail=str(e))
+        logger.error(f"Error creating appointment: {str(e)}")
+        raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        raise HTTPException(status_code=419, detail="Time slot already booked. Please try a different time.")
+        logger.error(f"Unexpected error creating appointment: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/patient/{patient_id}", response_model=List[AppointmentResponseModel])
-def get_patient_appointments(patient_id: int, db: Session = Depends(get_db)):
+def get_patient_appointments(
+    patient_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
-    Retrieve all appointments for a patient.
+    Retrieve all appointments for a patient (requires authentication).
     """
     if not patient_exists(db, patient_id):
         raise HTTPException(status_code=404, detail="Patient not found")
+    
+    # Restrict access to patient's own appointments unless doctor
+    if current_user["user_type"] == "patient" and patient_id != current_user["user"].id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this patient's appointments")
+
     appointments = get_all_appointments_for_patient(db, patient_id)
     logger.info(f"Retrieved {len(appointments)} appointments for patient ID={patient_id}")
     return appointments
 
 @router.get("/doctor/{doctor_id}", response_model=List[AppointmentResponseModel])
-def get_doctor_appointments(doctor_id: int, db: Session = Depends(get_db)):
+def get_doctor_appointments(
+    doctor_id: int,
+    db: Session = Depends(get_db),
+    current_doctor: Doctor = Depends(get_current_doctor)
+):
     """
-    Retrieve all appointments for a doctor.
+    Retrieve all appointments for a doctor (requires doctor authentication).
     """
     if not doctor_exists(db, doctor_id):
         raise HTTPException(status_code=404, detail="Doctor not found")
+    if doctor_id != current_doctor.id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this doctor's appointments")
+    
     appointments = get_all_appointments_for_doctor(db, doctor_id)
     logger.info(f"Retrieved {len(appointments)} appointments for doctor ID={doctor_id}")
     return appointments
 
 @router.put("/{appointment_id}/cancel", response_model=AppointmentResponseModel)
-def cancel_appointment(appointment_id: int, db: Session = Depends(get_db)):
+def cancel_appointment(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
-    Cancel an existing appointment.
+    Cancel an existing appointment (requires authentication).
     """
     appointment = db.query(AppointmentModel).filter(AppointmentModel.id == appointment_id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    # Only the patient or their doctor can cancel
+    if (current_user["user_type"] == "patient" and appointment.patient_id != current_user["user"].id) or \
+       (current_user["user_type"] == "doctor" and appointment.doctor_id != current_user["user"].id):
+        raise HTTPException(status_code=403, detail="Not authorized to cancel this appointment")
+
     if appointment.status == AppointmentStatusModel.CANCELLED:
         raise HTTPException(status_code=400, detail="Appointment is already cancelled")
     if appointment.status == AppointmentStatusModel.COMPLETED:
@@ -117,10 +152,11 @@ def cancel_appointment(appointment_id: int, db: Session = Depends(get_db)):
 def get_available_slots(
     doctor_id: int,
     date: date,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     """
-    Retrieve available appointment slots for a doctor on a given date.
+    Retrieve available appointment slots for a doctor on a given date (requires authentication).
     """
     if not doctor_exists(db, doctor_id):
         raise HTTPException(status_code=404, detail="Doctor not found")

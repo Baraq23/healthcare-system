@@ -1,18 +1,39 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import timedelta
 
 from database import get_db
 from models.patient import Patient
 from schemas.patient import PatientCreate, PatientResponse, PatientUpdate
 from utils.helper import hash_password
+from auth import LoginRequest, authenticate_user, create_access_token, get_current_patient, UserType
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/patients", tags=["patients"])
+
+@router.post("/login")
+def login_patient(login_data: LoginRequest, db: Session = Depends(get_db)):
+    """
+    Authenticate a patient using email and password, return a JWT token.
+    """
+    user = authenticate_user(db, login_data.email, login_data.password, UserType.PATIENT)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(
+        data={"sub": str(user["id"]), "user_type": UserType.PATIENT},
+        expires_delta=timedelta(minutes=30)
+    )
+    logger.info(f"Patient logged in: ID={user['id']}, Email={user['email']}")
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/", response_model=PatientResponse)
 def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
@@ -36,30 +57,39 @@ def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
     return db_patient
 
 @router.get("/{patient_id}", response_model=PatientResponse)
-def get_patient(patient_id: int, db: Session = Depends(get_db)):
+def get_patient(patient_id: int, db: Session = Depends(get_db), current_patient: Patient = Depends(get_current_patient)):
     """
-    Retrieve a patient by ID.
+    Retrieve a patient by ID (requires authentication).
     """
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
+    if patient.id != current_patient.id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this patient")
     return patient
 
 @router.get("/", response_model=List[PatientResponse])
-def get_all_patients(db: Session = Depends(get_db)):
+def get_all_patients(db: Session = Depends(get_db), current_patient: Patient = Depends(get_current_patient)):
     """
-    Retrieve all patients.
+    Retrieve all patients (requires authentication).
     """
     return db.query(Patient).all()
 
 @router.put("/{patient_id}", response_model=PatientResponse)
-def update_patient(patient_id: int, patient_update: PatientUpdate, db: Session = Depends(get_db)):
+def update_patient(
+    patient_id: int,
+    patient_update: PatientUpdate,
+    db: Session = Depends(get_db),
+    current_patient: Patient = Depends(get_current_patient)
+):
     """
-    Update a patient's details, including password if provided.
+    Update a patient's details, including password if provided (requires authentication).
     """
     db_patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not db_patient:
         raise HTTPException(status_code=404, detail="Patient not found")
+    if db_patient.id != current_patient.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this patient")
 
     update_data = patient_update.model_dump(exclude_unset=True)
     if "password" in update_data:

@@ -1,19 +1,40 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import timedelta
 
 from database import get_db
 from models.doctor import Doctor
 from models.specialization import Specialization
 from schemas.doctor import DoctorCreate, DoctorResponse, DoctorUpdate
 from utils.helper import get_specialization_by_name, specialization_exists_by_name, hash_password
+from auth import LoginRequest, authenticate_user, create_access_token, get_current_doctor, UserType
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/doctors", tags=["doctors"])
+
+@router.post("/login")
+def login_doctor(login_data: LoginRequest, db: Session = Depends(get_db)):
+    """
+    Authenticate a doctor using email and password, return a JWT token.
+    """
+    user = authenticate_user(db, login_data.email, login_data.password, UserType.DOCTOR)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(
+        data={"sub": str(user["id"]), "user_type": UserType.DOCTOR},
+        expires_delta=timedelta(minutes=30)
+    )
+    logger.info(f"Doctor logged in: ID={user['id']}, Email={user['email']}")
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/", response_model=DoctorResponse)
 def create_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
@@ -43,30 +64,39 @@ def create_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
     return db_doctor
 
 @router.get("/{doctor_id}", response_model=DoctorResponse)
-def get_doctor(doctor_id: int, db: Session = Depends(get_db)):
+def get_doctor(doctor_id: int, db: Session = Depends(get_db), current_doctor: Doctor = Depends(get_current_doctor)):
     """
-    Retrieve a doctor by ID.
+    Retrieve a doctor by ID (requires authentication).
     """
     doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
+    if doctor.id != current_doctor.id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this doctor")
     return doctor
 
 @router.get("/", response_model=List[DoctorResponse])
-def get_all_doctors(db: Session = Depends(get_db)):
+def get_all_doctors(db: Session = Depends(get_db), current_doctor: Doctor = Depends(get_current_doctor)):
     """
-    Retrieve all doctors.
+    Retrieve all doctors (requires authentication).
     """
     return db.query(Doctor).all()
 
 @router.put("/{doctor_id}", response_model=DoctorResponse)
-def update_doctor(doctor_id: int, doctor_update: DoctorUpdate, db: Session = Depends(get_db)):
+def update_doctor(
+    doctor_id: int,
+    doctor_update: DoctorUpdate,
+    db: Session = Depends(get_db),
+    current_doctor: Doctor = Depends(get_current_doctor)
+):
     """
-    Update a doctor's details, including password if provided.
+    Update a doctor's details, including password if provided (requires authentication).
     """
     db_doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
     if not db_doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
+    if db_doctor.id != current_doctor.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this doctor")
 
     update_data = doctor_update.model_dump(exclude_unset=True)
     if "specialization_name" in update_data:
