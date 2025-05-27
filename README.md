@@ -96,39 +96,50 @@ uvicorn main:app --reload
 
 - `Base URL; http://localhost:8000 , this is the port from where the FastAPI runs.`
 
-```mermaid
-flowchart LR
-    subgraph Patients
-        P1["POST /patients/login\nLogin Patient"]
-        P2["GET /patients/\nGet All Patients"]
-        P3["POST /patients/\nCreate Patient"]
-        P4["GET /patients/{patient_id}\nGet Patient"]
-        P5["PUT /patients/{patient_id}\nUpdate Patient"]
-    end
 
-    subgraph Doctors
-        D1["POST /doctors/login\nLogin Doctor"]
-        D2["GET /doctors/\nGet All Doctors"]
-        D3["POST /doctors/\nCreate Doctor"]
-        D4["GET /doctors/{doctor_id}\nGet Doctor"]
-        D5["PUT /doctors/{doctor_id}\nUpdate Doctor"]
-    end
+ *`Patients`*
 
-    subgraph Specializations
-        S1["POST /specializations/\nCreate Specialization"]
-        S2["GET /specializations/\nGet All Specializations"]
-        S3["GET /specializations/{specialization_id}\nGet Specialization"]
-    end
+| Method | Path                       | Description                |
+|--------|----------------------------|----------------------------|
+| POST   | `/patients/login`          | Login patient              |
+| GET    | `/patients/`               | Get all patients           |
+| POST   | `/patients/`               | Create patient             |
+| GET    | `/patients/{patient_id}`   | Get patient by ID          |
+| PUT    | `/patients/{patient_id}`   | Update patient by ID       |
 
-    subgraph Appointments
-        A1["POST /appointments/\nCreate Appointment"]
-        A2["GET /appointments/patient/{patient_id}\nGet Patient Appointments"]
-        A3["GET /appointments/doctor/{doctor_id}\nGet Doctor Appointments"]
-        A4["PUT /appointments/{appointment_id}/cancel\nCancel Appointment"]
-        A5["GET /appointments/doctor/{doctor_id}/available-slots\nGet Available Slots"]
-    end
+---
 
-```
+ *`Doctors`*
+
+| Method | Path                     | Description                |
+|--------|--------------------------|----------------------------|
+| POST   | `/doctors/login`         | Login doctor               |
+| GET    | `/doctors/`              | Get all doctors            |
+| POST   | `/doctors/`              | Create doctor              |
+| GET    | `/doctors/{doctor_id}`   | Get doctor by ID           |
+| PUT    | `/doctors/{doctor_id}`   | Update doctor by ID        |
+
+---
+
+ *`Specializations`*
+
+| Method | Path                                 | Description                |
+|--------|--------------------------------------|----------------------------|
+| POST   | `/specializations/`                  | Create specialization      |
+| GET    | `/specializations/`                  | Get all specializations    |
+| GET    | `/specializations/{specialization_id}`| Get specialization by ID   |
+
+---
+
+ *`Appointments`*
+
+| Method | Path                                               | Description                      |
+|--------|----------------------------------------------------|----------------------------------|
+| POST   | `/appointments/`                                  | Create appointment               |
+| GET    | `/appointments/patient/{patient_id}`               | Get patient appointments         |
+| GET    | `/appointments/doctor/{doctor_id}`                 | Get doctor appointments          |
+| PUT    | `/appointments/{appointment_id}/cancel`            | Cancel appointment               |
+| GET    | `/appointments/doctor/{doctor_id}/available-slots` | Get available slots for doctor   |
 
 
 
