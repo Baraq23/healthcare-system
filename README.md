@@ -94,174 +94,41 @@ uvicorn main:app --reload
 
 ## API Documentation
 
-Base URL; http://localhost:8000 , this is the port 
-
-Patients
-Login Patient
-
-    Method: POST
-
-    Path: /patients/login
-
-    Description:
-    Authenticates a patient and returns a token.
-
-Get All Patients
-
-    Method: GET
-
-    Path: /patients/
-
-    Description:
-    Retrieves a list of all patients.
-
-Create Patient
-
-    Method: POST
-
-    Path: /patients/
-
-    Description:
-    Creates a new patient.
-
-Get Patient
-
-    Method: GET
-
-    Path: /patients/{patient_id}
-
-    Description:
-    Retrieves details of a specific patient by ID.
-
-Update Patient
-
-    Method: PUT
-
-    Path: /patients/{patient_id}
-
-    Description:
-    Updates an existing patient by ID.
-
-Doctors
-Login Doctor
-
-    Method: POST
-
-    Path: /doctors/login
-
-    Description:
-    Authenticates a doctor and returns a token.
-
-Get All Doctors
-
-    Method: GET
-
-    Path: /doctors/
-
-    Description:
-    Retrieves a list of all doctors.
-
-Create Doctor
-
-    Method: POST
-
-    Path: /doctors/
-
-    Description:
-    Creates a new doctor.
-
-Get Doctor
-
-    Method: GET
-
-    Path: /doctors/{doctor_id}
-
-    Description:
-    Retrieves details of a specific doctor by ID.
-
-Update Doctor
-
-    Method: PUT
-
-    Path: /doctors/{doctor_id}
-
-    Description:
-    Updates an existing doctor by ID.
-
-Specializations
-Create Specialization
-
-    Method: POST
-
-    Path: /specializations/
-
-    Description:
-    Creates a new specialization.
-
-Get All Specializations
-
-    Method: GET
-
-    Path: /specializations/
-
-    Description:
-    Retrieves a list of all specializations.
-
-Get Specialization
-
-    Method: GET
-
-    Path: /specializations/{specialization_id}
-
-    Description:
-    Retrieves details of a specific specialization by ID.
-
-Appointments
-Create Appointment
-
-    Method: POST
-
-    Path: /appointments/
-
-    Description:
-    Creates a new appointment.
-
-Get Patient Appointments
-
-    Method: GET
-
-    Path: /appointments/patient/{patient_id}
-
-    Description:
-    Retrieves all appointments for a specific patient.
-
-Get Doctor Appointments
-
-    Method: GET
-
-    Path: /appointments/doctor/{doctor_id}
-
-    Description:
-    Retrieves all appointments for a specific doctor.
-
-Cancel Appointment
-
-    Method: PUT
-
-    Path: /appointments/{appointment_id}/cancel
-
-    Description:
-    Cancels an existing appointment by ID.
-
-Get Available Slots
-
-    Method: GET
-
-    Path: /appointments/doctor/{doctor_id}/available-slots
-
-    Description:
-    Retrieves available time slots for a specific doctor.
-
+- `Base URL; http://localhost:8000 , this is the port from where the FastAPI runs.`
+
+```mermaid
+flowchart LR
+    subgraph Patients
+        P1["POST /patients/login\nLogin Patient"]
+        P2["GET /patients/\nGet All Patients"]
+        P3["POST /patients/\nCreate Patient"]
+        P4["GET /patients/{patient_id}\nGet Patient"]
+        P5["PUT /patients/{patient_id}\nUpdate Patient"]
+    end
+
+    subgraph Doctors
+        D1["POST /doctors/login\nLogin Doctor"]
+        D2["GET /doctors/\nGet All Doctors"]
+        D3["POST /doctors/\nCreate Doctor"]
+        D4["GET /doctors/{doctor_id}\nGet Doctor"]
+        D5["PUT /doctors/{doctor_id}\nUpdate Doctor"]
+    end
+
+    subgraph Specializations
+        S1["POST /specializations/\nCreate Specialization"]
+        S2["GET /specializations/\nGet All Specializations"]
+        S3["GET /specializations/{specialization_id}\nGet Specialization"]
+    end
+
+    subgraph Appointments
+        A1["POST /appointments/\nCreate Appointment"]
+        A2["GET /appointments/patient/{patient_id}\nGet Patient Appointments"]
+        A3["GET /appointments/doctor/{doctor_id}\nGet Doctor Appointments"]
+        A4["PUT /appointments/{appointment_id}/cancel\nCancel Appointment"]
+        A5["GET /appointments/doctor/{doctor_id}/available-slots\nGet Available Slots"]
+    end
+
+```
 
 
 
@@ -441,7 +308,7 @@ erDiagram
 
 
 
-## Future improvements:
+## Future Improvements:
 - User validation: such email or phone numbeer verification system will be icorporated and other important details such as ID numbers, emergency contant details, and medical insurance cover details for patients will also be include.
 - Incorporate different hospitals to the system so that doctors can attend to patients in different hospitals that offer facilities and equipment in their field of specialization, am making the doctors more accessible by the patient.
 
