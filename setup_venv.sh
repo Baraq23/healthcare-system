@@ -16,5 +16,6 @@ pip install sqlalchemy
 pip install pymysql
 pip install redis
 pip install 'passlib[bcrypt]'
+pip install python-jose[cryptography] fastapi-security
 
 echo "Virtual environment setup complete! Use 'source venv/bin/activate' to activate it."
