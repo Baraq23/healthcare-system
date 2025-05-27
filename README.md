@@ -215,6 +215,51 @@ Columns:
 
 ***Relationships***
 
+## Entity Relationship Diagram (ERD)
+
+The following diagram illustrates the relationships between entities in a healthcare appointment scheduling system:
+
+```mermaid
+erDiagram
+    SPECIALIZATION ||--o{ DOCTOR : has
+    PATIENT ||--o{ APPOINTMENT : schedules
+    DOCTOR ||--o{ APPOINTMENT : accepts
+    SPECIALIZATION {
+        int id PK
+        varchar(100) name
+    }
+    DOCTOR {
+        int id PK
+        varchar(255) first_name
+        varchar(255) last_name
+        int specialization_id FK
+        varchar(255) email
+        varchar(20) phone
+        text office_address
+        datetime created_at
+    }
+    PATIENT {
+        int id PK
+        varchar(255) first_name
+        varchar(255) last_name
+        date date_of_birth
+        enum gender
+        varchar(255) email
+        varchar(20) phone
+        text address
+        datetime created_at
+    }
+    APPOINTMENT {
+        int id PK
+        int patient_id FK
+        int doctor_id FK
+        datetime scheduled_datetime
+        enum status
+        datetime created_at
+        datetime updated_at
+    }
+```
+
 - The database employs the following relationships to connect the tables:
 
     *`One-to-Many`* (`Patients` to `Appointments`):
