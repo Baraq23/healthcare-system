@@ -30,3 +30,7 @@ app.include_router(doctor.router)
 app.include_router(specialization.router)
 app.include_router(appointment.router)
 
+@app.get("/")
+def read_root():
+    return {"details": "Welcome to healthcare fast api..."}
+
