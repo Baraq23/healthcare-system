@@ -66,19 +66,19 @@ def create_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
     return db_doctor
 
 @router.get("/{doctor_id}", response_model=DoctorResponse)
-def get_doctor(doctor_id: int, db: Session = Depends(get_db), current_doctor: Doctor = Depends(get_current_doctor)):
+def get_doctor(doctor_id: int, db: Session = Depends(get_db)):
     """
     Retrieve a doctor by ID (requires authentication).
     """
     doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
-    if not doctor:
-        raise HTTPException(status_code=404, detail="Doctor not found")
-    if doctor.id != current_doctor.id:
-        raise HTTPException(status_code=403, detail="Not authorized to view this doctor")
+    # if not doctor:
+    #     raise HTTPException(status_code=404, detail="Doctor not found")
+    # if doctor.id != current_doctor.id:
+    #     raise HTTPException(status_code=403, detail="Not authorized to view this doctor")
     return doctor
 
 @router.get("/", response_model=List[DoctorResponse])
-def get_all_doctors(db: Session = Depends(get_db), current_doctor: Doctor = Depends(get_current_doctor)):
+def get_all_doctors(db: Session = Depends(get_db)):
     """
     Retrieve all doctors (requires authentication).
     """
