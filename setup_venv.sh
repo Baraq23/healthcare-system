@@ -17,5 +17,7 @@ pip install pymysql
 pip install redis
 pip install 'passlib[bcrypt]'
 pip install python-jose[cryptography] fastapi-security
+pip install -U pydantic
+
 
 echo "Virtual environment setup complete! Use 'source venv/bin/activate' to activate it."
