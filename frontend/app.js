@@ -211,9 +211,10 @@ function clearDashboardData() {
 async function handleRegister(event) {
     event.preventDefault();
     const form = event.target;
-    const data  = new FormData(form);
-    
+    const formData  = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
 
+    console.log(" before dob print.");
     // Convert dob to ISO string if not already
     if (data.dob) {
         // Ensure it's a valid date string before converting to avoid issues with empty or malformed dates
