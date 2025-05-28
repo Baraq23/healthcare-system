@@ -1,8 +1,9 @@
 const API_BASE_URL = 'http://localhost:8000';
+let patientId = 0;
 let currentUser = null; // { token, id, type, name, email }
 let specializationsCache = []; // Cache for specializations
 let doctorsCache = []; // Cache for doctors by specialization
-
+let token = "";
 // DOM Elements
 const views = {
     login: document.getElementById('login-view'),
@@ -51,13 +52,10 @@ function clearError() {
     errorMessageArea.textContent = '';
 }
 
-async function apiCall(endpoint, method = 'GET', body = null, requiresAuth = true, isFormData = false) {
+async function apiCall(endpoint, method = 'GET', body = null, requiresAuth = false, isFormData = false) {
     showLoading(true);
     clearError();
     const headers = {};
-    if (!isFormData && body) {
-        headers['Content-Type'] = 'application/json';
-    }
 
     if (requiresAuth && currentUser && currentUser.token) {
         headers['Authorization'] = `Bearer ${currentUser.token}`;
@@ -69,26 +67,34 @@ async function apiCall(endpoint, method = 'GET', body = null, requiresAuth = tru
     };
 
     if (body) {
-        config.body = isFormData ? body : JSON.stringify(body);
+        if (isFormData) {
+            const formContent = Object.fromEntries(body.entries());
+            console.log("FORMCONTENT", formContent);
+            config.body = JSON.stringify(formContent);
+            headers['Content-Type'] = 'application/json';
+        } else {
+            config.body = body;
+            headers['Content-Type'] = 'application/json';
+        }
+
     }
 
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+
+        const responseData = await response.json()
+        console.log("API CALL RESPONSE DATA: ", responseData);
         if (!response.ok) {
-            let errorData;
-            try {
-                errorData = await response.json();
-            } catch (e) {
-                errorData = { detail: response.statusText };
-            }
+            let errorData = responseData;
+            
             throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
         }
         if (response.status === 204) { // No content
             return null;
         }
-        return await response.json();
+        return responseData;
     } catch (error) {
-        console.error('API Call Error:', error);
+        console.error('MY API  Error Response:', error.detail);
         displayError(error.message || 'An unexpected error occurred.');
         throw error; // Re-throw to handle in calling function if needed
     } finally {
@@ -120,15 +126,15 @@ function updateNav() {
 // Authentication and Registration
 async function handleLogin(event) {
     event.preventDefault();
-    const formData = new FormData(loginForm);
+    const body = new FormData(loginForm);
     // FastAPI OAuth2PasswordRequestForm expects 'username' and 'password'
-    const body = new URLSearchParams();
-    body.append('username', formData.get('email'));
-    body.append('password', formData.get('password'));
-
+    console.log(Object.fromEntries(body.entries()));
     try {
-        const data = await apiCall('/token', 'POST', body, false, true); // isFormData = true for URLSearchParams
-        localStorage.setItem('accessToken', data.access_token);
+        const data = await apiCall('/patients/login', 'POST', body, false, true); // isFormData = true for URLSearchParams
+
+        patientId = data.patient_id;
+        token = data.access_token;
+        // localStorage.setItem('accessToken', data.access_token);
         await fetchCurrentUser(); // This will set currentUser and update UI
     } catch (error) {
         // Error already displayed by apiCall
@@ -136,20 +142,25 @@ async function handleLogin(event) {
 }
 
 async function fetchCurrentUser() {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-        logout(); // Ensure clean state if no token
-        return;
-    }
-    currentUser = { token }; // Temporarily set token for apiCall
+    // const token = localStorage.getItem('accessToken');
+    // if (!token) {
+    //     logout(); // Ensure clean state if no token
+    //     return;
+    // }
+    // currentUser = { token }; // Temporarily set token for apiCall
     try {
-        const userData = await apiCall('/users/me', 'GET'); // Assumes /users/me returns {id, email, first_name, last_name, role}
+        const userData = await apiCall(`/patients/${patientId}`, 'GET', true); 
         currentUser = {
             token,
             id: userData.id,
+            gender: userData.gender,
+            first_name: userData.first_name,
             email: userData.email,
             name: `${userData.first_name} ${userData.last_name}`,
-            type: userData.role, // Assuming 'patient' or 'doctor'
+            last_name: userData.last_name,
+            address: userData.address,
+            created_at: userData. created_at,
+            type: "patient"
         };
         localStorage.setItem('currentUser', JSON.stringify({id: currentUser.id, name: currentUser.name, type: currentUser.type, email: currentUser.email}));
         updateNav();
