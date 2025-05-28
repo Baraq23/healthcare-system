@@ -56,8 +56,8 @@ async function apiCall(endpoint, method = 'GET', body = null, requiresAuth = fal
     showLoading(true);
     clearError();
     const headers = {};
-
-    if (requiresAuth && currentUser && currentUser.token) {
+    
+     if (requiresAuth && currentUser && currentUser.token) {
         headers['Authorization'] = `Bearer ${currentUser.token}`;
     }
 
@@ -72,8 +72,9 @@ async function apiCall(endpoint, method = 'GET', body = null, requiresAuth = fal
             console.log("FORMCONTENT", formContent);
             config.body = JSON.stringify(formContent);
             headers['Content-Type'] = 'application/json';
+            
         } else {
-            config.body = body;
+            config.body = JSON.stringify(body);
             headers['Content-Type'] = 'application/json';
         }
 
@@ -85,16 +86,13 @@ async function apiCall(endpoint, method = 'GET', body = null, requiresAuth = fal
         const responseData = await response.json()
         console.log("API CALL RESPONSE DATA: ", responseData);
         if (!response.ok) {
-            let errorData = responseData;
             
-            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            throw new Error(responseData.detail || `HTTP error! status: ${response.status}`);
         }
-        if (response.status === 204) { // No content
-            return null;
-        }
+       
         return responseData;
     } catch (error) {
-        console.error('MY API  Error Response:', error.detail);
+        console.error('MY API  Error Response:', error);
         displayError(error.message || 'An unexpected error occurred.');
         throw error; // Re-throw to handle in calling function if needed
     } finally {
@@ -136,11 +134,12 @@ async function handleLogin(event) {
         token = data.access_token;
         // localStorage.setItem('accessToken', data.access_token);
         await fetchCurrentUser(); // This will set currentUser and update UI
+        console.log("ACCESS TOKENS: ", token);
     } catch (error) {
         // Error already displayed by apiCall
     }
 }
-
+console.log("ACCESS TOKENS: ", token);
 async function fetchCurrentUser() {
     // const token = localStorage.getItem('accessToken');
     // if (!token) {
@@ -212,14 +211,16 @@ function clearDashboardData() {
 async function handleRegister(event) {
     event.preventDefault();
     const form = event.target;
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+    const data  = new FormData(form);
+    
 
     // Convert dob to ISO string if not already
     if (data.dob) {
         // Ensure it's a valid date string before converting to avoid issues with empty or malformed dates
+        console.log("dob before conversion", data.dob);
         try {
             data.date_of_birth = new Date(data.dob).toISOString().split('T')[0];
+            console.log("dob after conversion", data.date_of_birth);
         } catch (e) {
             displayError("Invalid Date of Birth format.");
             return;
@@ -237,8 +238,10 @@ async function handleRegister(event) {
         delete data.specializationId;
     }
 
+    console.log("REGISTRATION DATA: ", data)
+
     try {
-        await apiCall(endpoint, 'POST', data, false);
+        await apiCall(endpoint, 'POST', data, true);
         displayError(`Registration successful as ${userType}. Please login.`); // Use displayError for success temporarily
         showView('login');
         loginForm.reset();
