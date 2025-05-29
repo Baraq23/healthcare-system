@@ -56,7 +56,8 @@ function displaySuccess(message) {
     errorMessageArea.textContent = message;
     errorMessageArea.classList.add('success-message');
     errorMessageArea.classList.remove('hidden');
-    setTimeout(() => errorMessageArea.classList.add('hidden', 'success-message'), 5000);
+    setTimeout(() => errorMessageArea.classList.add('hidden'), 5000);
+    setTimeout(() => errorMessageArea.classList.remove('success-message'), 5000);
 }
 
 function clearError() {
@@ -278,7 +279,7 @@ async function handleRegister(event) {
     console.log("REGISTRATION DATA: ", data)
 
     try {
-        await apiCall(endpoint, 'POST', data, true);
+        await CommonApiCall(endpoint, 'POST', data, false, false);
         displayError(`Registration successful as ${userType}. Please login.`); // Use displayError for success temporarily
         showView('login');
         loginForm.reset();
