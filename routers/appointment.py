@@ -159,7 +159,7 @@ def cancel_appointment(
     logger.info(f"Appointment cancelled: ID={appointment_id}")
     return appointment
 
-@router.get("/doctor/{doctor_id}/available-slots", response_model=List[datetime])
+@router.get("/doctor/{doctor_id}/{date}", response_model=List[datetime])
 def get_available_slots(
     doctor_id: int,
     date: date,
@@ -169,6 +169,7 @@ def get_available_slots(
     """
     Retrieve available appointment slots for a doctor on a given date (requires authentication).
     """
+    print("DATE BOOKED RECIEVED IN BACKED: ", date)
     if not doctor_exists(db, doctor_id):
         raise HTTPException(status_code=404, detail="Doctor not found")
 
@@ -184,7 +185,7 @@ def get_available_slots(
         booked_slots=booked_slots,
         working_start=start_time,
         working_end=end_time,
-        slot_interval_minutes=30,
+        slot_interval_minutes=60,
         now=now
     )
     logger.info(f"Retrieved {len(slots)} available slots for doctor ID={doctor_id} on {date}")
