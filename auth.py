@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # JWT settings (replace with environment variables in production)
-SECRET_KEY = "your-secret-key-please-change-this"  # Use a secure key
+SECRET_KEY = "healthcare123" 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 180  # 3 hours
 # OAuth2 scheme for token validation
@@ -42,6 +42,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    print("JWT Token created!")
     return encoded_jwt
 
 def authenticate_user(db: Session, email: str, password: str, user_type: str) -> Optional[dict]:
@@ -53,11 +54,14 @@ def authenticate_user(db: Session, email: str, password: str, user_type: str) ->
     elif user_type == UserType.PATIENT:
         user = db.query(Patient).filter(Patient.email == email).first()
     else:
+        print("def authenticate_user:: User authentication by user or passwor FAILED")
         return None
 
     if not user or not verify_password(password, user.password):
+        print("Failed: returned None: User not authenticated, or password not verified")
         return None
 
+    print('SUCCESS: (id": user.id, "email": user.email, "user_type": user_type) Returned')
     return {"id": user.id, "email": user.email, "user_type": user_type}
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -74,8 +78,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         user_id: int = int(payload.get("sub"))
         user_type: str = payload.get("user_type")
         if user_id is None or user_type not in [UserType.DOCTOR, UserType.PATIENT]:
+            print("Invalid credentials in JWT token. JWT must have user_id(sub) and user_type")
+            print("Could not find user_id or user_type! (credentials_exception ERROR)")
             raise credentials_exception
     except JWTError:
+        print("JWT Error!")
         raise credentials_exception
 
     if user_type == UserType.DOCTOR:
@@ -84,8 +91,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         user = db.query(Patient).filter(Patient.id == user_id).first()
 
     if user is None:
+        print("Current User NOT Found.")
         raise credentials_exception
-
+    print("Current User Found. User Type: ", user_type)
     return {"user": user, "user_type": user_type}
 
 def get_current_doctor(current_user: dict = Depends(get_current_user)):
@@ -93,7 +101,9 @@ def get_current_doctor(current_user: dict = Depends(get_current_user)):
     Ensure the current user is a doctor.
     """
     if current_user["user_type"] != UserType.DOCTOR:
+        print("DOCTOR User  NOT Found.")
         raise HTTPException(status_code=403, detail="Not authorized as a doctor")
+    print("DOCTOR User Found.")
     return current_user["user"]
 
 def get_current_patient(current_user: dict = Depends(get_current_user)):
@@ -101,5 +111,7 @@ def get_current_patient(current_user: dict = Depends(get_current_user)):
     Ensure the current user is a patient.
     """
     if current_user["user_type"] != UserType.PATIENT:
+        print("PATIENT User NOT Found.")
         raise HTTPException(status_code=403, detail="Not authorized as a patient")
+    print("PATIENT User Found.")
     return current_user["user"]
