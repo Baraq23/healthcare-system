@@ -1,14 +1,15 @@
-import api from './ignore/apicalls.js';
+// import api from './ignore/apicalls.js';
 
 
 const API_BASE_URL = 'http://localhost:8000';
-let patientId = 0;
+let userID = 0;
 let currentUser = null; // { token, id, type, name, email }
 let specializationsCache = []; // Cache for specializations
 let allDoctors = [];
 let doctorsCache = []; // Cache for doctors by specialization
 let token = "";
 let myAppointments = [];
+let  userRole = "patient";
 // DOM Elements
 const views = {
     login: document.getElementById('login-view'),
