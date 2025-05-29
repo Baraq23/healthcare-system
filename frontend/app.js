@@ -526,7 +526,7 @@ async function bindDocs(appointments) {
 async function cancelAppointment(appointmentId) {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
     try {
-        await apiCall(`/appointments/${appointmentId}`, 'PUT', { status: 'cancelled' });
+        await CommonApiCall(`/appointments/${appointmentId}/cancel`, 'PUT', { status: 'cancelled' }, true, false);
         displayError('Appointment cancelled.'); 
         if (currentUser.type === 'patient') {
             fetchPatientAppointments();
@@ -534,7 +534,7 @@ async function cancelAppointment(appointmentId) {
             fetchDoctorAppointments();
         }
     } catch (error) {
-        displayError('Failed to cancel appointment.');
+        displayError('Unexpected error: Failed to cancel appointment.');
     }
 }
 
@@ -629,13 +629,13 @@ function renderAppointments(promAppointments, userType) {
                 const cancelBtn = document.createElement('button');
                 cancelBtn.textContent = 'Cancel';
                 cancelBtn.classList.add('button', 'danger', 'small');
-                cancelBtn.onclick = () => cancelAppointment(appt.id);
+                cancelBtn.onclick = () => cancelAppointment(parseInt(appt.id));
                 actions.appendChild(cancelBtn);
             } else { // doctor
                 const completeBtn = document.createElement('button');
                 completeBtn.textContent = 'Mark Completed';
                 completeBtn.classList.add('button', 'primary', 'small');
-                completeBtn.onclick = () => markAppointmentCompleted(appt.id);
+                completeBtn.onclick = () => markAppointmentCompleted(parseInt(appt.id));
                 actions.appendChild(completeBtn);
 
                 const viewPatientBtn = document.createElement('button');
