@@ -481,7 +481,7 @@ async function fetchPatientAppointments() {
     try {
         const appointments = await api.getMyAppointmets();
         
-        myAppointments = bindDocs(appointments);
+        myAppointments = await bindDocs(appointments);
         if (myAppointments.length == 0) {
             throw new Error("Unexpected error occured while retrieving your appointments.")
         }
@@ -498,6 +498,7 @@ async function bindDocs(appointments) {
         return [];
     }
 
+    let fullApptPromises;
     try {
         const fullApptPromises = appointments.map(async (appointment) => {
             try {
@@ -509,7 +510,12 @@ async function bindDocs(appointments) {
             }
         });
 
-        return await Promise.all(fullApptPromises);
+        const completeApptList = await Promise.all(fullApptPromises);
+            console.log("FULL APPOINTMENTS(BINDING FUN) befor return: ", typeof(completeApptList));
+            console.log("FULL APPOINTMENTS(BINDING FUN) befor return: ", completeApptList);
+
+        return completeApptList;
+        
     } catch (error) {
         console.error('Unexpected error in bindDocs:', error.message);
         displayError(error.message);
@@ -572,8 +578,11 @@ async function viewPatientDetails(patientId) {
 }
 
 // Common Appointment Rendering Logic
-function renderAppointments(appointments, userType) {
+function renderAppointments(promAppointments, userType) {
 
+    let appointments = Array.from(promAppointments);
+    console.log("APPOINTMENTS IN RENDER APPOINTMENTS typez", typeof(appointments));
+    console.log("APPOINTMENTS IN RENDER APPOINTMENTS1", appointments);
     const upcomingList = document.getElementById(`${userType}-upcoming-appointments`);
     const completedList = document.getElementById(`${userType}-completed-appointments`);
     const cancelledList = document.getElementById(`${userType}-cancelled-appointments`);
@@ -673,10 +682,13 @@ function setupTabs(containerSelector) {
             const targetTabId = button.dataset.tab;
 
             let contentIdToFind = targetTabId;
-            if (!targetTabId.endsWith('-appointments')) { 
-                 const prefix = containerSelector.includes('patient') ? 'patient' : 'doctor';
-                 contentIdToFind = `${prefix}-${targetTabId}-appointments`;
-            }
+            // console.log("CONTENT TO FIND: ", JSON.stringify(contentIdToFind));
+            
+            // const prefix = containerSelector.includes('patient') ? 'patient' : 'doctor';
+            contentIdToFind = `${targetTabId}-appointments`;
+            // console.log("CONTENT ID TO FIND: ", JSON.stringify(contentIdToFind));
+
+
 
             const targetContent = document.getElementById(contentIdToFind);
             if (targetContent) {
