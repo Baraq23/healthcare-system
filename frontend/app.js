@@ -5,6 +5,7 @@ const API_BASE_URL = 'http://localhost:8000';
 let patientId = 0;
 let currentUser = null; // { token, id, type, name, email }
 let specializationsCache = []; // Cache for specializations
+let allDoctors = [];
 let doctorsCache = []; // Cache for doctors by specialization
 let token = "";
 // DOM Elements
@@ -139,6 +140,7 @@ async function handleLogin(event) {
         patientId = responseData.patient_id;
         token = responseData.access_token;
         await fetchCurrentUser(); // This will set currentUser and update UI
+        allDoctors = await api.getAllDoctors();
         console.log("ACCESS TOKENS: ", token);
 
     } catch (error) {
@@ -279,6 +281,11 @@ async function handleRegister(event) {
     }
 }
 
+function filterDoctorsBySpecialization(specializationId, allDoctors) {
+    console.log("typ of specialization id: (in filtering)", typeof(specializationId));
+  return allDoctors.filter(doctor => doctor.specialization?.id === specializationId);
+}
+
 async function loadSpecializations() {
     try {
         specializationsCache = await CommonApiCall('/specializations', 'GET', null, false); 
@@ -310,7 +317,8 @@ async function loadSpecializationsForBooking() {
 }
 
 async function handleApptSpecializationChange() {
-    const specializationId = apptSpecializationSelect.value;
+    const specializationId = parseInt(apptSpecializationSelect.value);
+
     apptDoctorSelect.innerHTML = '<option value="">Loading doctors...</option>';
     apptDoctorSelect.disabled = true;
     apptDateInput.disabled = true;
@@ -323,7 +331,18 @@ async function handleApptSpecializationChange() {
     }
 
     try {
-        doctorsCache = await apiCall(`/doctors?specialization_id=${specializationId}`, 'GET');
+
+        console.log("ALL DOCTORS: ", allDoctors);
+        console.log("spec id: ", specializationId);
+        console.log("typ of specialization id: (in sp change)", typeof(specializationId));
+
+        console.log("filtered docs",  filterDoctorsBySpecialization(specializationId, allDoctors));
+        doctorsCache = filterDoctorsBySpecialization(specializationId, allDoctors);
+        if (doctorsCache.length === 0) {
+            throw new Error("Currently, there are no available doctors in this field of specialization.");
+            
+        }
+
         apptDoctorSelect.innerHTML = '<option value="">Select Doctor</option>';
         doctorsCache.forEach(doc => {
             const option = new Option(`${doc.first_name} ${doc.last_name}`, doc.id);
@@ -331,7 +350,7 @@ async function handleApptSpecializationChange() {
         });
         apptDoctorSelect.disabled = false;
     } catch (error) {
-        displayError('Failed to load doctors for this specialization.');
+        displayError(error.message);
         apptDoctorSelect.innerHTML = '<option value="">Error loading doctors</option>';
     }
 }
@@ -445,7 +464,7 @@ async function fetchPatientAppointments() {
         return;
     }
     try {
-        const appointments = await apiCall(`/appointments/patient/${currentUser.id}`, 'GET');
+        const appointments = await api.getMyAppointmets();
         renderAppointments(appointments, 'patient');
     } catch (error) {
         displayError('Failed to fetch patient appointments.');
