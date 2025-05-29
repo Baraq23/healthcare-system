@@ -8,6 +8,7 @@ let specializationsCache = []; // Cache for specializations
 let allDoctors = [];
 let doctorsCache = []; // Cache for doctors by specialization
 let token = "";
+let myAppointments = [];
 // DOM Elements
 const views = {
     login: document.getElementById('login-view'),
@@ -49,6 +50,13 @@ function displayError(message) {
     errorMessageArea.textContent = message;
     errorMessageArea.classList.remove('hidden');
     setTimeout(() => errorMessageArea.classList.add('hidden'), 5000);
+}
+
+function displaySuccess(message) {
+    errorMessageArea.textContent = message;
+    errorMessageArea.classList.add('success-message');
+    errorMessageArea.classList.remove('hidden');
+    setTimeout(() => errorMessageArea.classList.add('hidden', 'success-message'), 5000);
 }
 
 function clearError() {
@@ -442,14 +450,17 @@ async function handleBookAppointment(event) {
         return;
     }
 
-    const appointmentDateTime = `${date}T${time}`; 
+    const appointmentDateTime = `${date}T${time}Z`; 
+    console.log("APPOINTMENT DATETIME: ", appointmentDateTime);
 
     try {
-        await apiCall('/appointments', 'POST', {
+
+        await CommonApiCall('/appointments', 'POST', {
             doctor_id: parseInt(doctorId),
-            appointment_time: appointmentDateTime
-        });
-        displayError('Appointment booked successfully!'); 
+            patient_id: patientId,
+            scheduled_datetime: appointmentDateTime
+        }, true);
+        displaySuccess('Appointment booked successfully!'); 
         scheduleAppointmentForm.reset();
         apptDoctorSelect.disabled = true;
         apptDateInput.disabled = true;
@@ -468,9 +479,40 @@ async function fetchPatientAppointments() {
     }
     try {
         const appointments = await api.getMyAppointmets();
-        renderAppointments(appointments, 'patient');
+        
+        myAppointments = bindDocs(appointments);
+        if (myAppointments.length == 0) {
+            throw new Error("Unexpected error occured while retrieving your appointments.")
+        }
+        console.log("FULL APPOINTMENTS: ", myAppointments);
+        renderAppointments(myAppointments, 'patient');
     } catch (error) {
-        displayError('Failed to fetch patient appointments.');
+        displayError(error.message);
+    }
+}
+
+async function bindDocs(appointments) {
+    if (!Array.isArray(appointments)) {
+        console.error('bindDocs expects an array of appointments');
+        return [];
+    }
+
+    try {
+        const fullApptPromises = appointments.map(async (appointment) => {
+            try {
+                const getDoc = await CommonApiCall(`/doctors/${appointment.doctor_id}`, 'GET', null, true);
+                return { ...appointment, doctor: getDoc };
+            } catch (error) {
+                console.error(`Error fetching doctor for appointment ${appointment.id}:`, error.message);
+                return { ...appointment, doctor: null };
+            }
+        });
+
+        return await Promise.all(fullApptPromises);
+    } catch (error) {
+        console.error('Unexpected error in bindDocs:', error.message);
+        displayError(error.message);
+        return [];
     }
 }
 
@@ -530,6 +572,7 @@ async function viewPatientDetails(patientId) {
 
 // Common Appointment Rendering Logic
 function renderAppointments(appointments, userType) {
+
     const upcomingList = document.getElementById(`${userType}-upcoming-appointments`);
     const completedList = document.getElementById(`${userType}-completed-appointments`);
     const cancelledList = document.getElementById(`${userType}-cancelled-appointments`);
@@ -551,13 +594,13 @@ function renderAppointments(appointments, userType) {
         const item = document.createElement('li');
         const details = document.createElement('div');
         details.classList.add('details');
-        const apptDate = new Date(appt.appointment_time);
+        const apptDate = new Date(appt.scheduled_datetime);
         const dateString = apptDate.toLocaleDateString();
         const timeString = apptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         if (userType === 'patient') {
             details.innerHTML = `
-                <strong>Doctor:</strong> ${appt.doctor_first_name} ${appt.doctor_last_name} (${appt.doctor_specialization_name})<br>
+                <strong>Doctor:</strong> ${appt.doctor.first_name} ${appt.doctor.last_name} (${appt.doctor.specialization.name})<br>
                 <strong>Date:</strong> ${dateString} <strong>Time:</strong> ${timeString}
             `;
         } else { // doctor
