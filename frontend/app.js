@@ -81,7 +81,7 @@ function updateNav() {
     if (currentUser) {
         authNav.classList.add('hidden');
         userNav.classList.remove('hidden');
-        userGreeting.textContent = `Welcome, ${currentUser.name || currentUser.email}! (${currentUser.type})`;
+        userGreeting.textContent = `${currentUser.name || currentUser.email}  |  ${currentUser.type}`;
     } else {
         authNav.classList.remove('hidden');
         userNav.classList.add('hidden');
@@ -145,12 +145,12 @@ async function handleLogin(event) {
     // FastAPI OAuth2PasswordRequestForm expects 'email' and 'password'
     // console.log(Object.fromEntries(body.entries()));
     try {
-        const responseData = await api.loginPatient(loginObject);
-        patientId = responseData.patient_id;
+        const responseData = await loginPatient(loginObject);
+        userID = responseData.patient_id;
         token = responseData.access_token;
         await fetchCurrentUser(); // This will set currentUser and update UI
-        allDoctors = await api.getAllDoctors();
-        // console.log("ACCESS TOKENS: ", token);
+
+        allDoctors = await getAllDoctors();
 
     } catch (error) {
 
@@ -161,9 +161,53 @@ async function handleLogin(event) {
     }
 }
 
+// Login patient
+async function loginPatient(loginObject) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/patients/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(loginObject)
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) throw new Error(responseData.detail);
+
+        return responseData;
+    } catch (error) {
+      throw error;
+    }      
+}
+
+// Get all doctors (protected)
+async function getAllDoctors() {
+  console.log("ALL DOCTORS FUNCTION CALLED!");
+  try {
+
+    const response = await fetch(`${API_BASE_URL}/doctors/`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    }
+
+  });
+
+    const responseData = await response.json();
+
+    if (!response.ok) throw new Error(responseData.detail);
+
+    return responseData;
+  } catch (error) {
+      console.log("Failed to fetch ALL doctors:", error)
+      throw error;
+    }
+}
+
 async function getUserDetails() {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
+    const response = await fetch(`${API_BASE_URL}/patients/${userID}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -219,11 +263,11 @@ async function fetchCurrentUser() {
 
 function logout() {
     currentUser = null;
+    token="";
     localStorage.removeItem('accessToken');
     localStorage.removeItem('currentUser');
     updateNav();
     showView('login');
-    // Clear dashboard data if any
     clearDashboardData();
 }
 
@@ -464,7 +508,7 @@ async function handleBookAppointment(event) {
 
         await CommonApiCall('/appointments', 'POST', {
             doctor_id: parseInt(doctorId),
-            patient_id: patientId,
+            patient_id: userID,
             scheduled_datetime: appointmentDateTime
         }, true);
         displaySuccess('Appointment booked successfully!'); 
@@ -485,7 +529,7 @@ async function fetchPatientAppointments() {
         return;
     }
     try {
-        const appointments = await api.getMyAppointmets();
+        const appointments = await getMyAppointmets();
         
         myAppointments = await bindDocs(appointments);
         if (myAppointments.length == 0) {
@@ -496,6 +540,29 @@ async function fetchPatientAppointments() {
     } catch (error) {
         displayError(error.message);
     }
+}
+
+// get appiontments
+async function getMyAppointmets() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/appointments/patient/${userID}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    }
+  });
+
+    const responseData = await response.json();
+  
+    if (!response.ok) throw new Error(responseData.detail);
+
+    return responseData;
+
+  } catch (error) {
+      console.log("Failed to fetch appointments:", error);
+      throw error;
+  }
 }
 
 async function bindDocs(appointments) {
@@ -574,9 +641,9 @@ async function markAppointmentCompleted(appointmentId) {
     }
 }
 
-async function viewPatientDetails(patientId) {
+async function viewPatientDetails(userID) {
     try {
-        const patient = await apiCall(`/patients/${patientId}`, 'GET'); 
+        const patient = await apiCall(`/patients/${userID}`, 'GET'); 
         alert(`Patient Details:\nName: ${patient.first_name} ${patient.last_name}\nEmail: ${patient.email}\nPhone: ${patient.phone_number}\nDOB: ${patient.date_of_birth}`);
     } catch (error) {
         displayError('Failed to fetch patient details.');
