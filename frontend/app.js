@@ -378,6 +378,7 @@ async function handleApptDateChange() {
 
     try {
         const availability = await CommonApiCall(`/appointments/doctor/${doctorId}/${date}`, 'GET', null, true);
+        console.log("AVAILABILITY: ", availability);
         timeSlotsContainer.innerHTML = '';
         
         const fixedSlots = ["09:00:00", "10:00:00", "11:00:00", "12:00:00", "13:00:00", "14:00:00", "15:00:00", "16:00:00"];
@@ -418,7 +419,7 @@ async function handleApptDateChange() {
         }
 
     } catch (error) {
-        displayError('Failed to load time slots.');
+        displayError(error.message);
         timeSlotsContainer.innerHTML = '<p>Error loading slots.</p>';
     }
 }
