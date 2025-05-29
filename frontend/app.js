@@ -353,7 +353,8 @@ async function handleApptSpecializationChange() {
 
         apptDoctorSelect.innerHTML = '<option value="">Select Doctor</option>';
         doctorsCache.forEach(doc => {
-            const option = new Option(`${doc.first_name} ${doc.last_name}`, doc.id);
+            const option = new Option(`Name: ${doc.first_name} ${doc.last_name}        
+                 Age: ${calculateAge(doc.date_of_birth)}yrs                             Spec: ${doc.specialization.name}`, doc.id);
             apptDoctorSelect.add(option);
         });
         apptDoctorSelect.disabled = false;
@@ -361,6 +362,10 @@ async function handleApptSpecializationChange() {
         displayError(error.message);
         apptDoctorSelect.innerHTML = '<option value="">Error loading doctors</option>';
     }
+}
+
+function padString(str, length) {
+  return str.padEnd(length, ' ');
 }
 
 function handleApptDoctorChange() {
@@ -738,6 +743,21 @@ function setupEventListeners() {
     apptDateInput.addEventListener('change', handleApptDateChange);
     scheduleAppointmentForm.addEventListener('submit', handleBookAppointment);
 
+}
+
+function calculateAge(birthDateString) {
+  const today = new Date();
+  const birthDate = new Date(birthDateString);
+  let age = today.getFullYear() - birthDate.getFullYear();
+
+  // Adjust if birthday hasn't occurred yet this year
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  const dayDiff = today.getDate() - birthDate.getDate();
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+    age--;
+  }
+
+  return `${age}`;
 }
 
 // Initialization
