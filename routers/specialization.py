@@ -32,6 +32,9 @@ def create_specialization(
             status_code=400,
             detail="Specialization already exists"
         )
+    # capitalize specialization name
+    specialization_data = specialization.model_dump(exclude={"sapecialization_name"})
+    specialization_data["specialization_name"] = specialization.name.upper(())
     db_spec = SpecializationModel(**specialization.model_dump())
     db.add(db_spec)
     db.commit()

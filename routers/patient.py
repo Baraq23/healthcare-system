@@ -47,7 +47,9 @@ def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail="Email already registered")
 
     # Prepare patient data
-    patient_data = patient.model_dump(exclude={"password"})
+    patient_data = patient.model_dump(exclude={"password", "last_name", "first_name"})
+    patient_data["last_name"] = patient.last_name.upper()
+    patient_data["first_name"] = patient.first_name.upper()
     patient_data["password"] = hash_password(patient.password)  # Hash password
 
     # Create and save patient

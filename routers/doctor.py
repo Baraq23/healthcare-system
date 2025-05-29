@@ -53,8 +53,10 @@ def create_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Specialization not found")
 
     # Prepare doctor data
-    doctor_data = doctor.model_dump(exclude={"password", "specialization_name"})
+    doctor_data = doctor.model_dump(exclude={"password", "specialization_name", "first_name", "last_name"})
     doctor_data["specialization_id"] = specialization.id
+    doctor_data["first_name"] = doctor.first_name.upper()
+    doctor_data["last_name"] = doctor.last_name.upper()
     doctor_data["password"] = hash_password(doctor.password)  # Hash password
 
     # Create and save doctor
