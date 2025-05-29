@@ -96,8 +96,7 @@ async function CommonApiCall(endpoint, method = 'GET', body = null, requiresAuth
     if (body) {
         if (isFormData) {
             const formContent = Object.fromEntries(body.entries());
-            console.log("FORMCONTENT", formContent);
-            config.body = JSON.stringify(formContent);
+            // config.body = JSON.stringify(formContent);
             headers['Content-Type'] = 'application/json';
             
         } else {
@@ -111,7 +110,7 @@ async function CommonApiCall(endpoint, method = 'GET', body = null, requiresAuth
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
         const responseData = await response.json()
-        console.log("API CALL RESPONSE DATA: ", responseData);
+        // console.log("API CALL RESPONSE DATA: ", responseData);
         if (!response.ok) {
             
             throw new Error(responseData.detail || `HTTP error! status: ${response.status}`);
@@ -134,14 +133,14 @@ async function handleLogin(event) {
     const body = new FormData(loginForm);
     const loginObject = Object.fromEntries(body.entries());
     // FastAPI OAuth2PasswordRequestForm expects 'email' and 'password'
-    console.log(Object.fromEntries(body.entries()));
+    // console.log(Object.fromEntries(body.entries()));
     try {
         const responseData = await api.loginPatient(loginObject);
         patientId = responseData.patient_id;
         token = responseData.access_token;
         await fetchCurrentUser(); // This will set currentUser and update UI
         allDoctors = await api.getAllDoctors();
-        console.log("ACCESS TOKENS: ", token);
+        // console.log("ACCESS TOKENS: ", token);
 
     } catch (error) {
 
@@ -164,7 +163,7 @@ async function getUserDetails() {
   });
 
     const responseData = await response.json();
-    console.log("current user", responseData);
+    console.log("CURRENT USER", responseData);
 
     if (!response.ok) throw new Error(responseData.detail);
 
@@ -332,11 +331,11 @@ async function handleApptSpecializationChange() {
 
     try {
 
-        console.log("ALL DOCTORS: ", allDoctors);
-        console.log("spec id: ", specializationId);
-        console.log("typ of specialization id: (in sp change)", typeof(specializationId));
+        // console.log("ALL DOCTORS: ", allDoctors);
+        // console.log("spec id: ", specializationId);
+        // console.log("typ of specialization id: (in sp change)", typeof(specializationId));
 
-        console.log("filtered docs",  filterDoctorsBySpecialization(specializationId, allDoctors));
+        // console.log("filtered docs",  filterDoctorsBySpecialization(specializationId, allDoctors));
         doctorsCache = filterDoctorsBySpecialization(specializationId, allDoctors);
         if (doctorsCache.length === 0) {
             throw new Error("Currently, there are no available doctors in this field of specialization.");
@@ -362,11 +361,14 @@ function handleApptDoctorChange() {
 }
 
 async function handleApptDateChange() {
-    const doctorId = apptDoctorSelect.value;
+    const doctorId = parseInt(apptDoctorSelect.value);
     const date = apptDateInput.value;
     timeSlotsContainer.innerHTML = 'Loading slots...';
     bookAppointmentBtn.disabled = true;
     apptTimeInput.value = '';
+
+    const body = `${date}T00:00:00.000Z`;
+    console.log("INPUTE DATE: ", body);
 
 
     if (!doctorId || !date) {
@@ -375,7 +377,7 @@ async function handleApptDateChange() {
     }
 
     try {
-        const availability = await apiCall(`/appointments/availability/${doctorId}?date=${date}`, 'GET');
+        const availability = await CommonApiCall(`/appointments/doctor/${doctorId}/${date}`, 'GET', null, true);
         timeSlotsContainer.innerHTML = '';
         
         const fixedSlots = ["09:00:00", "10:00:00", "11:00:00", "12:00:00", "13:00:00", "14:00:00", "15:00:00", "16:00:00"];
