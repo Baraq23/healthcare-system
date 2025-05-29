@@ -1,3 +1,6 @@
+import api from './ignore/apicalls.js';
+
+
 const API_BASE_URL = 'http://localhost:8000';
 let patientId = 0;
 let currentUser = null; // { token, id, type, name, email }
@@ -52,7 +55,30 @@ function clearError() {
     errorMessageArea.textContent = '';
 }
 
-async function apiCall(endpoint, method = 'GET', body = null, requiresAuth = false, isFormData = false) {
+
+
+function showView(viewId) {
+    Object.values(views).forEach(view => view.classList.add('hidden'));
+    if (views[viewId]) {
+        views[viewId].classList.remove('hidden');
+    } else {
+        console.error(`View with id ${viewId} not found.`);
+    }
+}
+
+function updateNav() {
+    if (currentUser) {
+        authNav.classList.add('hidden');
+        userNav.classList.remove('hidden');
+        userGreeting.textContent = `Welcome, ${currentUser.name || currentUser.email}! (${currentUser.type})`;
+    } else {
+        authNav.classList.remove('hidden');
+        userNav.classList.add('hidden');
+        userGreeting.textContent = '';
+    }
+}
+
+async function CommonApiCall(endpoint, method = 'GET', body = null, requiresAuth = false, isFormData = false) {
     showLoading(true);
     clearError();
     const headers = {};
@@ -100,55 +126,56 @@ async function apiCall(endpoint, method = 'GET', body = null, requiresAuth = fal
     }
 }
 
-function showView(viewId) {
-    Object.values(views).forEach(view => view.classList.add('hidden'));
-    if (views[viewId]) {
-        views[viewId].classList.remove('hidden');
-    } else {
-        console.error(`View with id ${viewId} not found.`);
-    }
-}
-
-function updateNav() {
-    if (currentUser) {
-        authNav.classList.add('hidden');
-        userNav.classList.remove('hidden');
-        userGreeting.textContent = `Welcome, ${currentUser.name || currentUser.email}! (${currentUser.type})`;
-    } else {
-        authNav.classList.remove('hidden');
-        userNav.classList.add('hidden');
-        userGreeting.textContent = '';
-    }
-}
 
 // Authentication and Registration
 async function handleLogin(event) {
     event.preventDefault();
     const body = new FormData(loginForm);
-    // FastAPI OAuth2PasswordRequestForm expects 'username' and 'password'
+    const loginObject = Object.fromEntries(body.entries());
+    // FastAPI OAuth2PasswordRequestForm expects 'email' and 'password'
     console.log(Object.fromEntries(body.entries()));
     try {
-        const data = await apiCall('/patients/login', 'POST', body, false, true); // isFormData = true for URLSearchParams
-
-        patientId = data.patient_id;
-        token = data.access_token;
-        // localStorage.setItem('accessToken', data.access_token);
+        const responseData = await api.loginPatient(loginObject);
+        patientId = responseData.patient_id;
+        token = responseData.access_token;
         await fetchCurrentUser(); // This will set currentUser and update UI
         console.log("ACCESS TOKENS: ", token);
+
     } catch (error) {
-        // Error already displayed by apiCall
+
+        displayError(error || 'An unexpected error occurred.');
+
+    } finally {
+        showLoading(false);
     }
 }
-console.log("ACCESS TOKENS: ", token);
+
+async function getUserDetails() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    }
+
+  });
+
+    const responseData = await response.json();
+    console.log("current user", responseData);
+
+    if (!response.ok) throw new Error(responseData.detail);
+
+    return responseData;
+  } catch (error) {
+      console.log("Failed to fetch patients details:", error)
+
+  }
+}
+
 async function fetchCurrentUser() {
-    // const token = localStorage.getItem('accessToken');
-    // if (!token) {
-    //     logout(); // Ensure clean state if no token
-    //     return;
-    // }
-    // currentUser = { token }; // Temporarily set token for apiCall
     try {
-        const userData = await apiCall(`/patients/${patientId}`, 'GET', true); 
+        const userData = await getUserDetails(); 
         currentUser = {
             token,
             id: userData.id,
@@ -254,7 +281,7 @@ async function handleRegister(event) {
 
 async function loadSpecializations() {
     try {
-        specializationsCache = await apiCall('/specializations', 'GET', null, false); 
+        specializationsCache = await CommonApiCall('/specializations', 'GET', null, false); 
         doctorSpecializationSelect.innerHTML = '<option value="">Select Specialization</option>';
         apptSpecializationSelect.innerHTML = '<option value="">Select Specialization</option>';
         specializationsCache.forEach(spec => {
