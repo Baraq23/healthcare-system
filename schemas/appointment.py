@@ -15,6 +15,7 @@ class AppointmentUpdate(BaseModel):
 
 class AppointmentResponse(Appointment):
     id: int
+    status: str
     created_at: datetime
     updated_at: Optional[datetime] = None
 
