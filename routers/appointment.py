@@ -36,30 +36,40 @@ def create_appointment(
     """
     Schedule a new appointment if doctor and patient are available (requires patient authentication).
     """
+    print("Start scheduling new appointment...")
     now = datetime.now(timezone.utc)
     scheduled_utc = appointment.scheduled_datetime.astimezone(timezone.utc)
 
     # Validate future time and working hours
+    print("Validate future time and working hours...")
     if scheduled_utc < now:
         raise HTTPException(status_code=400, detail="Appointments must be scheduled for future time slots.")
     if not (time(9, 0) <= scheduled_utc.time() < time(17, 0)):
         raise HTTPException(status_code=400, detail="Appointments must be scheduled between 09:00 and 17:00.")
     
     # Validate slot alignment (30-minute intervals)
+    print("Validate slot alignment (30-minute intervals)...")
     if scheduled_utc.minute % 30 != 0 or scheduled_utc.second != 0:
         raise HTTPException(status_code=400, detail="Appointments must be scheduled on 30-minute intervals (e.g., 09:00, 09:30).")
 
     # Check doctor and patient existence
+    print("Check doctor and patient existence...")
+    print("patient appointment value", appointment.patient_id)
+    print("Doctor appointment value", appointment.doctor_id)
+    print("Patient exists", patient_exists(db, appointment.patient_id))
+    print("Doctor exists", doctor_exists(db, appointment.doctor_id))
     if not doctor_exists(db, appointment.doctor_id):
         raise HTTPException(status_code=404, detail="Doctor not found")
     if not patient_exists(db, appointment.patient_id):
         raise HTTPException(status_code=404, detail="Patient not found")
 
     # Ensure the patient is booking for themselves
+    print("Ensure the patient is booking for themselves...")
     if appointment.patient_id != current_patient.id:
         raise HTTPException(status_code=403, detail="Not authorized to book for another patient")
 
     # Check for existing appointments
+    print("Check for existing appointments...")
     if patient_has_future_appointment_with_doctor(db, appointment.patient_id, appointment.doctor_id, now):
         raise HTTPException(
             status_code=409,
@@ -70,6 +80,7 @@ def create_appointment(
 
     try:
         # Delegate to service layer for creation with locking
+        print("Delegate to service layer for creation with locking...")
         appointment_data = appointment.model_dump()
         db_appointment = create_appointment_with_lock(db, appointment_data)
         logger.info(f"Appointment created: ID={db_appointment.id}, Doctor={appointment.doctor_id}, Patient={appointment.patient_id}")
@@ -79,7 +90,7 @@ def create_appointment(
         raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
         logger.error(f"Unexpected error creating appointment: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=409, detail="Doctor has another appointment at this time")
 
 @router.get("/patient/{patient_id}", response_model=List[AppointmentResponseModel])
 def get_patient_appointments(
