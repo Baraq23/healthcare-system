@@ -317,7 +317,14 @@ async function handleRegister(event) {
     // Map form fields to expected API fields if necessary
     // e.g. specializationId for doctors
     if (userType === 'doctor' && data.specializationId) {
-        data.specialization_id = parseInt(data.specializationId, 10);
+
+        const select = document.getElementById('doctor-specialization');
+        const selectedOption = select.options[select.selectedIndex];
+        const selectedText = selectedOption.textContent; // or .innerText
+
+        console.log(selectedText);
+
+        data.specialization_name = selectedText;
         delete data.specializationId;
     }
 
