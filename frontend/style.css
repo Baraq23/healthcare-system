@@ -87,11 +87,29 @@ main {
     font-size: 1rem;
 }
 
-.form-group input[type="radio"] {
-    margin-right: 0.3rem;
+/* .form-group input[type="radio"] {
+    
+} */
+
+.form-group-flex {
+    display: flex;
+    flex-direction: row;
 }
-.form-group label input[type="radio"] { /* For aligning radio buttons with their labels better */
-    vertical-align: middle;
+
+.form-group-flex label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-right: 2rem;
+    padding-right: 0.3rem;
+}
+
+.form-group-flex input {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-left: 0.5rem;
+    padding-left: 0.3rem;
 }
 
 
@@ -143,8 +161,9 @@ main {
 }
 
 .success-message {
-    background-color: #58b46d;
+    background-color: #46b15f;
     color: #ffff;
+    border: 1px solid #70f8ed;
 }
 
 main {
