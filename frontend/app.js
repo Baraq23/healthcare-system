@@ -157,7 +157,7 @@ async function handleLogin(event) {
 
     } catch (error) {
 
-        displayError(error || 'An unexpected error occurred.');
+        displayError(error.message || 'An unexpected error occurred.');
 
     } finally {
         showLoading(false);
@@ -634,7 +634,7 @@ async function markAppointmentCompleted(appointmentId) {
         displaySuccess('Appointment marked as completed.'); 
         fetchDoctorAppointments(); 
     } catch (error) {
-        displayError('Failed to mark appointment as completed.');
+        displayError(error.message);
     }
 }
 
@@ -643,7 +643,7 @@ async function viewPatientDetails(patientId) {
         const patient = await CommonApiCall(`/patients/${patientId}`, 'GET'); 
         alert(`Patient Details:\nName: ${patient.first_name} ${patient.last_name}\nEmail: ${patient.email}\nPhone: ${patient.phone_number}\nAge: ${calculateAge(patient.date_of_birth)}yrs`);
     } catch (error) {
-        displayError('Failed to fetch patient details.');
+        displayError(error.message);
     }
 }
 

@@ -176,7 +176,15 @@ def complete_appointment(
     # Only the patient or their doctor can cancel
     if (appointment.doctor_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized to mark this appointment as complete.")
+    
+    
+    now = datetime.now(timezone.utc)
+    created_at_aware = appointment.created_at.replace(tzinfo=timezone.utc)
 
+    if created_at_aware > now:
+        raise HTTPException(status_code=400, detail="Can’t mark appointment as complete before scheduled time. Contact patient to cancel or reschedule.")
+        
+        
     if appointment.status == AppointmentStatusModel.CANCELLED:
         raise HTTPException(status_code=400, detail="Can not mark a canceled appointment as complete")
     if appointment.status == AppointmentStatusModel.COMPLETED:
