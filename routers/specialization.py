@@ -34,7 +34,7 @@ def create_specialization(
         )
     # capitalize specialization name
     specialization_data = specialization.model_dump(exclude={"sapecialization_name"})
-    specialization_data["specialization_name"] = specialization.name.upper(())
+    specialization_data["specialization_name"] = specialization.name[0].upper() + specialization.name[1:].lower()
     db_spec = SpecializationModel(**specialization.model_dump())
     db.add(db_spec)
     db.commit()
@@ -48,7 +48,7 @@ def get_all_specializations(
     db: Session = Depends(get_db)
 ):
     """Get all specializations with pagination."""
-    return db.query(SpecializationModel).offset(skip).limit(limit).all()
+    return db.query(SpecializationModel).order_by(SpecializationModel.name.asc()).offset(skip).limit(limit).all()
 
 @router.get("/{specialization_id}", response_model=SpecializationSchema)
 def get_specialization(
