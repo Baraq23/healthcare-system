@@ -3,13 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import timedelta
+from fastapi.security import OAuth2PasswordRequestForm
 
 from database import get_db
 from models.doctor import Doctor
 from models.specialization import Specialization
 from schemas.doctor import DoctorCreate, DoctorResponse, DoctorUpdate
 from utils.helper import get_specialization_by_name, specialization_exists_by_name, hash_password
-from auth import LoginRequest, authenticate_user, create_access_token, get_current_doctor, UserType
+from auth import authenticate_user, create_access_token, get_current_doctor, UserType
 
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 180 # 3 hours
@@ -19,24 +20,36 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/doctors", tags=["doctors"])
 
+
 @router.post("/login")
-def login_doctor(login_data: LoginRequest, db: Session = Depends(get_db)):
-    """
-    Authenticate a doctor using email and password, return a JWT token.
-    """
-    user = authenticate_user(db, login_data.email, login_data.password, UserType.DOCTOR)
+async def doctor_login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    email = form_data.username  # This is the email sent as 'username'
+    password = form_data.password
+    # Authenticate doctor
+    user = authenticate_user(db, form_data.username, form_data.password, UserType.DOCTOR)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise HTTPException(status_code=400, detail="Invalid email or password")
+    
+    # Create token with user_type
     access_token = create_access_token(
         data={"sub": str(user["id"]), "user_type": UserType.DOCTOR},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    logger.info(f"Doctor logged in: ID={user['id']}, Email={user['email']}")
-    return {"doctor_id": user["id"], "access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+
+
+# protecting router
+@router.get("/me")
+async def read_doctor_profile(current_doctor: Doctor = Depends(get_current_doctor)):
+    return current_doctor
+
+
+
 
 @router.post("/", response_model=DoctorResponse)
 def create_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
