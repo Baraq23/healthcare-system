@@ -2,14 +2,15 @@
 
 
 const API_BASE_URL = 'http://localhost:8000';
-let userID = 0;
+
 let currentUser = null; // { token, id, type, name, email }
 let specializationsCache = []; // Cache for specializations
 let allDoctors = [];
 let doctorsCache = []; // Cache for doctors by specialization
 let token = "";
 let myAppointments = [];
-let  userRole = "";
+let userRole="";
+
 // DOM Elements
 const views = {
     login: document.getElementById('login-view'),
@@ -82,7 +83,7 @@ function updateNav() {
     if (currentUser) {
         authNav.classList.add('hidden');
         userNav.classList.remove('hidden');
-        userGreeting.textContent = `${currentUser.name || currentUser.email}  |   ${currentUser.type.toUpperCase()}`;
+        userGreeting.textContent = `${currentUser.name || currentUser.email}  |   ${userRole.toUpperCase()}`;
     } else {
         authNav.classList.remove('hidden');
         userNav.classList.add('hidden');
@@ -152,7 +153,7 @@ async function handleLogin(event) {
         console.log("Handle login function")
         const responseData = await userLogin(loginObject);
         console.log("RESPONS FROM LOGIN: ", responseData);
-        userID = responseData.patient_id;
+
         token = responseData.access_token;
         await fetchCurrentUser(); // This will set currentUser and update UI
 
@@ -234,7 +235,6 @@ async function getUserDetails() {
     console.log("CURRENT USER", responseData);
 
     if (!response.ok) throw new Error(responseData.detail);
-     userID = responseData.id;
     return responseData;
   } catch (error) {
       console.log("Failed to fetch patients details:", error.message)
@@ -245,6 +245,7 @@ async function getUserDetails() {
 async function fetchCurrentUser() {
     try {
         const userData = await getUserDetails(); 
+
         currentUser = {
             token,
             id: userData.id,
@@ -255,14 +256,14 @@ async function fetchCurrentUser() {
             last_name: userData.last_name,
             address: userData.address,
             created_at: userData. created_at,
-            type: "patient"
+            type: userRole
         };
-        localStorage.setItem('currentUser', JSON.stringify({id: currentUser.id, name: currentUser.name, type: currentUser.type, email: currentUser.email}));
+        localStorage.setItem('currentUser', JSON.stringify({id: currentUser.id, name: currentUser.name, type: userRole, email: currentUser.email}));
         updateNav();
-        if (currentUser.type === 'patient') {
+        if (userRole === 'patient') {
             showView('patientDashboard');
             loadPatientDashboardData();
-        } else if (currentUser.type === 'doctor') {
+        } else if (userRole === 'doctor') {
             showView('doctorDashboard');
             loadDoctorDashboardData();
         } else {
@@ -493,7 +494,7 @@ async function handleApptDateChange() {
 
     } catch (error) {
         displayError(error.message);
-        timeSlotsContainer.innerHTML = '<p>Error loading slots.</p>';
+        timeSlotsContainer.innerHTML = '<p>Times lots unavailabel.</p>';
     }
 }
 
@@ -522,7 +523,7 @@ async function handleBookAppointment(event) {
 
         await CommonApiCall('/appointments', 'POST', {
             doctor_id: parseInt(doctorId),
-            patient_id: userID,
+            patient_id: currentUser.id,
             scheduled_datetime: appointmentDateTime
         }, true);
         displaySuccess('Appointment booked successfully!'); 
@@ -558,9 +559,9 @@ async function fetchPatientAppointments() {
 
 // get appiontments
 async function getMyAppointmets() {
-    console.log("User id to FETCH APPOINTMENTS,:", userID);
+
   try {
-    const response = await fetch(`${API_BASE_URL}/appointments/patient/${userID}`, {
+    const response = await fetch(`${API_BASE_URL}/appointments/${userRole}/${currentUser.id}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -588,7 +589,7 @@ async function bindDocs(appointments) {
 
     let fullApptPromises;
     try {
-        const fullApptPromises = appointments.map(async (appointment) => {
+         fullApptPromises = appointments.map(async (appointment) => {
             try {
                 const getDoc = await CommonApiCall(`/doctors/${appointment.doctor_id}`, 'GET', null, true);
                 return { ...appointment, doctor: getDoc };
@@ -616,9 +617,9 @@ async function cancelAppointment(appointmentId) {
     try {
         await CommonApiCall(`/appointments/${appointmentId}/cancel`, 'PUT', { status: 'cancelled' }, true, false);
         displayError('Appointment cancelled.'); 
-        if (currentUser.type === 'patient') {
+        if (userRole === 'patient') {
             fetchPatientAppointments();
-        } else if (currentUser.type === 'doctor') {
+        } else if (userRole === 'doctor') {
             fetchDoctorAppointments();
         }
     } catch (error) {
@@ -638,7 +639,7 @@ async function fetchDoctorAppointments() {
         return;
     }
     try {
-        const appointments = await apiCall(`/appointments/doctors/${currentUser.id}`, 'GET');
+        const appointments = await getMyAppointmets();
         renderAppointments(appointments, 'doctor');
     } catch (error) {
         displayError('Failed to fetch doctor appointments.');
@@ -656,9 +657,9 @@ async function markAppointmentCompleted(appointmentId) {
     }
 }
 
-async function viewPatientDetails(userID) {
+async function viewPatientDetails(patientId) {
     try {
-        const patient = await apiCall(`/patients/${userID}`, 'GET'); 
+        const patient = await CommonApiCall(`/patients/${patientId}`, 'GET'); 
         alert(`Patient Details:\nName: ${patient.first_name} ${patient.last_name}\nEmail: ${patient.email}\nPhone: ${patient.phone_number}\nDOB: ${patient.date_of_birth}`);
     } catch (error) {
         displayError('Failed to fetch patient details.');
