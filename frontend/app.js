@@ -649,8 +649,8 @@ async function fetchDoctorAppointments() {
 async function markAppointmentCompleted(appointmentId) {
     if (!confirm("Mark this appointment as completed?")) return;
     try {
-        await apiCall(`/appointments/${appointmentId}`, 'PUT', { status: 'completed' });
-        displayError('Appointment marked as completed.'); 
+        await CommonApiCall(`/appointments/${appointmentId}`, 'PUT', { status: 'completed' }, true, false);
+        displaySuccess('Appointment marked as completed.'); 
         fetchDoctorAppointments(); 
     } catch (error) {
         displayError('Failed to mark appointment as completed.');

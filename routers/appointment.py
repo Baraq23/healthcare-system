@@ -137,7 +137,7 @@ def cancel_appointment(
     current_user: dict = Depends(get_current_patient)
 ):
     """
-    Cancel an existing appointment (requires authentication).
+    Cancel an existing appointment. (requires authentication).
     """
     appointment = db.query(AppointmentModel).filter(AppointmentModel.id == appointment_id).first()
     if not appointment:
@@ -145,13 +145,13 @@ def cancel_appointment(
     
     # Only the patient or their doctor can cancel
     if (appointment.patient_id != current_user.id) or \
-       (appointment.doctor_id != current_user.id):
+    (appointment.doctor_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized to cancel this appointment")
 
     if appointment.status == AppointmentStatusModel.CANCELLED:
         raise HTTPException(status_code=400, detail="Appointment is already cancelled")
     if appointment.status == AppointmentStatusModel.COMPLETED:
-        raise HTTPException(status_code=400, detail="Cannot cancel a completed appointment")
+        raise HTTPException(status_code=400, detail="Can not cancel a completed appointment")
 
     appointment.status = AppointmentStatusModel.CANCELLED
     db.commit()
@@ -159,15 +159,43 @@ def cancel_appointment(
     logger.info(f"Appointment cancelled: ID={appointment_id}")
     return appointment
 
+
+@router.put("/{appointment_id}", response_model=AppointmentResponseModel)
+def complete_appointment(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_doctor)
+):
+    """
+    Mark appointment as complete. This is only availabel for Doctors(requires authentication).
+    """
+    appointment = db.query(AppointmentModel).filter(AppointmentModel.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    # Only the patient or their doctor can cancel
+    if (appointment.doctor_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not authorized to mark this appointment as complete.")
+
+    if appointment.status == AppointmentStatusModel.CANCELLED:
+        raise HTTPException(status_code=400, detail="Can not mark a canceled appointment as complete")
+    if appointment.status == AppointmentStatusModel.COMPLETED:
+        raise HTTPException(status_code=400, detail="Appointment already marked as completed.")
+
+    appointment.status = AppointmentStatusModel.COMPLETED
+    db.commit()
+    db.refresh(appointment)
+    logger.info(f"Appointment marked completed: ID={appointment_id}")
+    return appointment
+
 @router.get("/doctor/{doctor_id}/{date}", response_model=List[datetime])
 def get_available_slots(
     doctor_id: int,
     date: date,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_patient)
 ):
     """
-    Retrieve available appointment slots for a doctor on a given date (requires authentication).
+    Retrieve available appointment slots for a doctor on a given date.
     """
     print("DATE BOOKED RECIEVED IN BACKED: ", date)
     if not doctor_exists(db, doctor_id):
