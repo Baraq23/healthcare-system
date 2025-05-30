@@ -144,8 +144,9 @@ def cancel_appointment(
         raise HTTPException(status_code=404, detail="Appointment not found")
     
     # Only the patient or their doctor can cancel
-    if (appointment.patient_id != current_user.id) or \
-    (appointment.doctor_id != current_user.id):
+    print("CURRENT USER: ", current_user)
+    print("this appointment: ", appointment)
+    if (appointment.patient_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized to cancel this appointment")
 
     if appointment.status == AppointmentStatusModel.CANCELLED:
@@ -181,7 +182,7 @@ def complete_appointment(
     now = datetime.now(timezone.utc)
     created_at_aware = appointment.created_at.replace(tzinfo=timezone.utc)
 
-    if created_at_aware > now:
+    if created_at_aware >= now:
         raise HTTPException(status_code=400, detail="Can’t mark appointment as complete before scheduled time. Contact patient to cancel or reschedule.")
         
         
