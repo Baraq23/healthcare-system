@@ -122,7 +122,6 @@ async function CommonApiCall(endpoint, method = 'GET', body = null, requiresAuth
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
         const responseData = await response.json()
-        // console.log("API CALL RESPONSE DATA: ", responseData);
         if (!response.ok) {
             
             throw new Error(responseData.detail || `HTTP error! status: ${response.status}`);
@@ -145,14 +144,11 @@ async function handleLogin(event) {
     const body = new FormData(loginForm);
     const loginObject = Object.fromEntries(body.entries());
     // FastAPI OAuth2PasswordRequestForm expects 'email' and 'password'
-    console.log("LOGIN ENTRIES", Object.fromEntries(body.entries()));
     try {
         if (userRole == "") {
             throw new Error("Please select user: patient/doctor...")
         }
-        console.log("Handle login function")
         const responseData = await userLogin(loginObject);
-        console.log("RESPONS FROM LOGIN: ", responseData);
 
         token = responseData.access_token;
         await fetchCurrentUser(); // This will set currentUser and update UI
@@ -170,14 +166,10 @@ async function handleLogin(event) {
 
 // Login user
 async function userLogin(loginObject) {
-    console.log("USER LOGIN FUNCTION");
-    console.log("USER ROLE: ", userRole);
-
-    
+   
     try {
         
         const formBody = new URLSearchParams(loginObject);
-        console.log("FORMBODY", formBody);
         const response = await fetch(`${API_BASE_URL}/${userRole}s/login`, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -196,7 +188,6 @@ async function userLogin(loginObject) {
 
 // Get all doctors (protected)
 async function getAllDoctors() {
-  console.log("ALL DOCTORS FUNCTION CALLED!");
   try {
 
     const response = await fetch(`${API_BASE_URL}/doctors/`, {
@@ -214,9 +205,8 @@ async function getAllDoctors() {
 
     return responseData;
   } catch (error) {
-      console.log("Failed to fetch ALL doctors:", error)
       throw error;
-    }
+  }
 }
 
 async function getUserDetails() {
@@ -232,12 +222,10 @@ async function getUserDetails() {
 
     const responseData = await response.json();
    
-    console.log("CURRENT USER", responseData);
 
     if (!response.ok) throw new Error(responseData.detail);
     return responseData;
   } catch (error) {
-      console.log("Failed to fetch patients details:", error.message)
 
   }
 }
@@ -311,14 +299,11 @@ async function handleRegister(event) {
     const formData  = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
-    console.log(" before dob print.");
     // Convert dob to ISO string if not already
     if (data.dob) {
         // Ensure it's a valid date string before converting to avoid issues with empty or malformed dates
-        console.log("dob before conversion", data.dob);
         try {
             data.date_of_birth = new Date(data.dob).toISOString().split('T')[0];
-            console.log("dob after conversion", data.date_of_birth);
         } catch (e) {
             displayError("Invalid Date of Birth format.");
             return;
@@ -336,7 +321,6 @@ async function handleRegister(event) {
         delete data.specializationId;
     }
 
-    console.log("REGISTRATION DATA: ", data)
 
     try {
         await CommonApiCall(endpoint, 'POST', data, false, false);
@@ -350,7 +334,6 @@ async function handleRegister(event) {
 }
 
 function filterDoctorsBySpecialization(specializationId, allDoctors) {
-    console.log("typ of specialization id: (in filtering)", typeof(specializationId));
   return allDoctors.filter(doctor => doctor.specialization?.id === specializationId);
 }
 
@@ -400,11 +383,7 @@ async function handleApptSpecializationChange() {
 
     try {
 
-        // console.log("ALL DOCTORS: ", allDoctors);
-        // console.log("spec id: ", specializationId);
-        // console.log("typ of specialization id: (in sp change)", typeof(specializationId));
-
-        // console.log("filtered docs",  filterDoctorsBySpecialization(specializationId, allDoctors));
+       
         doctorsCache = filterDoctorsBySpecialization(specializationId, allDoctors);
         if (doctorsCache.length === 0) {
             throw new Error("Currently, there are no available doctors in this field of specialization.");
@@ -442,7 +421,6 @@ async function handleApptDateChange() {
     apptTimeInput.value = '';
 
     const body = `${date}T00:00:00.000Z`;
-    console.log("INPUTE DATE: ", body);
 
 
     if (!doctorId || !date) {
@@ -452,7 +430,6 @@ async function handleApptDateChange() {
 
     try {
         const availability = await CommonApiCall(`/appointments/doctor/${doctorId}/${date}`, 'GET', null, true);
-        console.log("AVAILABILITY: ", availability);
         timeSlotsContainer.innerHTML = '';
         
         const fixedSlots = ["09:00:00", "10:00:00", "11:00:00", "12:00:00", "13:00:00", "14:00:00", "15:00:00", "16:00:00"];
@@ -517,7 +494,6 @@ async function handleBookAppointment(event) {
     }
 
     const appointmentDateTime = `${date}T${time}Z`; 
-    console.log("APPOINTMENT DATETIME: ", appointmentDateTime);
 
     try {
 
@@ -546,11 +522,10 @@ async function fetchPatientAppointments() {
     try {
         const appointments = await getMyAppointmets();
         
-        myAppointments = await bindDocs(appointments);
+        myAppointments = await bindAppts(appointments);
         if (myAppointments.length == 0) {
             throw new Error("Unexpected error occured while retrieving your appointments.")
         }
-        console.log("FULL APPOINTMENTS: ", myAppointments);
         renderAppointments(myAppointments, 'patient');
     } catch (error) {
         displayError(error.message);
@@ -576,33 +551,39 @@ async function getMyAppointmets() {
     return responseData;
 
   } catch (error) {
-      console.log("Failed to fetch appointments:", error);
       throw error;
   }
 }
 
-async function bindDocs(appointments) {
+async function bindAppts(appointments) {
     if (!Array.isArray(appointments)) {
         console.error('bindDocs expects an array of appointments');
         return [];
     }
 
     let fullApptPromises;
+    // user is doctor, bind patients to appointments. if user is patient, bind doctors to appointments
+
     try {
          fullApptPromises = appointments.map(async (appointment) => {
             try {
-                const getDoc = await CommonApiCall(`/doctors/${appointment.doctor_id}`, 'GET', null, true);
-                return { ...appointment, doctor: getDoc };
+                let data = {};
+                if (userRole = "patient" ) {
+                    data = await CommonApiCall(`/doctors/${appointment.doctor_id}`, 'GET', null, true);
+                    return { ...appointment, doctor: data };
+                }
+                if (userRole = "doctor") {
+                    data = await CommonApiCall(`/patients/${appointment.patient_id}`, 'GET', null, true);
+                    return { ...appointment, patient: data };
+                }
             } catch (error) {
-                console.error(`Error fetching doctor for appointment ${appointment.id}:`, error.message);
-                return { ...appointment, doctor: null };
+                console.error(`Error binding doctor-patient for appointment ${appointment.id}:`, error.message);
+                return appointment
             }
         });
 
         const completeApptList = await Promise.all(fullApptPromises);
-            console.log("FULL APPOINTMENTS(BINDING FUN) befor return: ", typeof(completeApptList));
-            console.log("FULL APPOINTMENTS(BINDING FUN) befor return: ", completeApptList);
-
+           
         return completeApptList;
         
     } catch (error) {
@@ -660,7 +641,7 @@ async function markAppointmentCompleted(appointmentId) {
 async function viewPatientDetails(patientId) {
     try {
         const patient = await CommonApiCall(`/patients/${patientId}`, 'GET'); 
-        alert(`Patient Details:\nName: ${patient.first_name} ${patient.last_name}\nEmail: ${patient.email}\nPhone: ${patient.phone_number}\nDOB: ${patient.date_of_birth}`);
+        alert(`Patient Details:\nName: ${patient.first_name} ${patient.last_name}\nEmail: ${patient.email}\nPhone: ${patient.phone_number}\nAge: ${calculateAge(patient.date_of_birth)}yrs`);
     } catch (error) {
         displayError('Failed to fetch patient details.');
     }
@@ -670,8 +651,7 @@ async function viewPatientDetails(patientId) {
 function renderAppointments(promAppointments, userType) {
 
     let appointments = Array.from(promAppointments);
-    console.log("APPOINTMENTS IN RENDER APPOINTMENTS typez", typeof(appointments));
-    console.log("APPOINTMENTS IN RENDER APPOINTMENTS1", appointments);
+
     const upcomingList = document.getElementById(`${userType}-upcoming-appointments`);
     const completedList = document.getElementById(`${userType}-completed-appointments`);
     const cancelledList = document.getElementById(`${userType}-cancelled-appointments`);
@@ -771,11 +751,8 @@ function setupTabs(containerSelector) {
             const targetTabId = button.dataset.tab;
 
             let contentIdToFind = targetTabId;
-            // console.log("CONTENT TO FIND: ", JSON.stringify(contentIdToFind));
             
-            // const prefix = containerSelector.includes('patient') ? 'patient' : 'doctor';
             contentIdToFind = `${targetTabId}-appointments`;
-            // console.log("CONTENT ID TO FIND: ", JSON.stringify(contentIdToFind));
 
 
 
@@ -813,7 +790,6 @@ function setupEventListeners() {
     radios.forEach(radio => {
         radio.addEventListener('change', (event) => {
             userRole = event.target.value;
-            console.log('Selected user type:', userRole);
         });
     });
 
