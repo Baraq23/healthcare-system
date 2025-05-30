@@ -3,12 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import timedelta
-
+from pydantic import BaseModel, EmailStr
 from database import get_db
 from models.patient import Patient
 from schemas.patient import PatientCreate, PatientResponse, PatientUpdate
 from utils.helper import hash_password
 from auth import LoginRequest, authenticate_user, create_access_token, get_current_patient, UserType
+from fastapi.security import OAuth2PasswordRequestForm
 
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 180 # 3 hours
@@ -19,23 +20,36 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/patients", tags=["patients"])
 
 @router.post("/login")
-def login_patient(login_data: LoginRequest, db: Session = Depends(get_db)):
-    """
-    Authenticate a patient using email and password, return a JWT token.
-    """
-    user = authenticate_user(db, login_data.email, login_data.password, UserType.PATIENT)
+async def patient_login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    email = form_data.username  # This is the email sent as 'username'
+    password = form_data.password
+
+    # Authenticate patient
+    user = authenticate_user(db, email, password, UserType.PATIENT)
+    print("THIS IS THE USER LOGING IN: ", user)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise HTTPException(status_code=400, detail="Invalid email or password")
+    
+    # Create token with user_type
     access_token = create_access_token(
         data={"sub": str(user["id"]), "user_type": UserType.PATIENT},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    logger.info(f"Patient logged in: ID={user['id']}, Email={user['email']}")
-    return {"patient_id": user["id"], "access_token": access_token, "token_type": "bearer"}
+    print("ACCESS TOKENS: ", )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+
+
+@router.get("/me")
+async def read_patient_profile(current_patient: Patient = Depends(get_current_patient)):
+    return current_patient
+
+
+
 
 @router.post("/", response_model=PatientResponse)
 def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
@@ -48,8 +62,8 @@ def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
 
     # Prepare patient data
     patient_data = patient.model_dump(exclude={"password", "last_name", "first_name"})
-    patient_data["last_name"] = patient.last_name.upper()
-    patient_data["first_name"] = patient.first_name.upper()
+    patient_data["first_name"] = patient.first_name[0].upper() + patient.first_name[1:].lower()
+    patient_data["last_name"] = patient.last_name[0].upper() + patient.last_name[1:].lower()
     patient_data["password"] = hash_password(patient.password)  # Hash password
 
     # Create and save patient
