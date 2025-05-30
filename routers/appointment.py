@@ -160,7 +160,7 @@ def cancel_appointment(
     return appointment
 
 
-@router.put("/{appointment_id}", response_model=AppointmentResponseModel)
+@router.put("/{appointment_id}/complete", response_model=AppointmentResponseModel)
 def complete_appointment(
     appointment_id: int,
     db: Session = Depends(get_db),
