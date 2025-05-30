@@ -11,14 +11,22 @@ except Exception as e:
     print(f"Error creating tables: {e}")
 
 
-# Configure CORS
+
 
 # creating FastAPI app instance
 app = FastAPI()
 
+
+
+# Configure CORS
+origins = [
+    "http://0.0.0.0:5000",  # frontend origin
+    "http://localhost:5000", # access frontend via localhost
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
