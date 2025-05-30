@@ -19,7 +19,7 @@ from utils.helper import (
     generate_available_slots,
 )
 from services.appointment_service import create_appointment_with_lock
-from auth import get_current_user, get_current_doctor, get_current_patient
+from auth import get_current_doctor, get_current_patient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -96,7 +96,7 @@ def create_appointment(
 def get_patient_appointments(
     patient_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_patient)
 ):
     """
     Retrieve all appointments for a patient (requires authentication).
@@ -105,7 +105,7 @@ def get_patient_appointments(
         raise HTTPException(status_code=404, detail="Patient not found")
     
     # Restrict access to patient's own appointments unless doctor
-    if current_user["user_type"] == "patient" and patient_id != current_user["user"].id:
+    if patient_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to view this patient's appointments")
 
     appointments = get_all_appointments_for_patient(db, patient_id)
@@ -134,7 +134,7 @@ def get_doctor_appointments(
 def cancel_appointment(
     appointment_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_patient)
 ):
     """
     Cancel an existing appointment (requires authentication).
@@ -144,8 +144,8 @@ def cancel_appointment(
         raise HTTPException(status_code=404, detail="Appointment not found")
     
     # Only the patient or their doctor can cancel
-    if (current_user["user_type"] == "patient" and appointment.patient_id != current_user["user"].id) or \
-       (current_user["user_type"] == "doctor" and appointment.doctor_id != current_user["user"].id):
+    if (appointment.patient_id != current_user.id) or \
+       (appointment.doctor_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized to cancel this appointment")
 
     if appointment.status == AppointmentStatusModel.CANCELLED:
@@ -164,7 +164,7 @@ def get_available_slots(
     doctor_id: int,
     date: date,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_patient)
 ):
     """
     Retrieve available appointment slots for a doctor on a given date (requires authentication).
