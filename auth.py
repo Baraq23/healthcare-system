@@ -19,31 +19,28 @@ logger = logging.getLogger(__name__)
 SECRET_KEY = "healthcare123" 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 180  # 3 hours
+
 # OAuth2 scheme for token validation
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")  # Generic token endpoint
+oauth2_doctor_scheme = OAuth2PasswordBearer(tokenUrl="/doctors/login")
+oauth2_patient_scheme = OAuth2PasswordBearer(tokenUrl="/patients/login")
 
 # Pydantic model for login request
 class LoginRequest(BaseModel):
-    email: str
+    username: str
     password: str
 
 class UserType:
     DOCTOR = "doctor"
     PATIENT = "patient"
 
+
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """
-    Create a JWT access token.
-    """
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    print("JWT Token created!")
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
 
 def authenticate_user(db: Session, email: str, password: str, user_type: str) -> Optional[dict]:
     """
@@ -64,54 +61,55 @@ def authenticate_user(db: Session, email: str, password: str, user_type: str) ->
     print('SUCCESS: (id": user.id, "email": user.email, "user_type": user_type) Returned')
     return {"id": user.id, "email": user.email, "user_type": user_type}
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """
-    Get the current user from a JWT token.
-    """
+
+
+
+
+# Doctor-specific dependency
+async def get_current_doctor(
+    token: str = Depends(oauth2_doctor_scheme), 
+    db: Session = Depends(get_db)
+) -> Doctor:
+    payload = decode_token(token)
+    user_type = payload.get("user_type")
+    user_id = payload.get("sub")
+    
+    if user_type != UserType.DOCTOR or not user_id:
+        raise HTTPException(status_code=403, detail="Not authorized as a doctor")
+    
+    doctor = db.query(Doctor).filter(Doctor.id == user_id).first()
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    
+    return doctor
+
+# Patient-specific dependency
+async def get_current_patient(
+    token: str = Depends(oauth2_patient_scheme), 
+    db: Session = Depends(get_db)
+) -> Patient:
+    payload = decode_token(token)
+    user_type = payload.get("user_type")
+    user_id = payload.get("sub")
+    
+    if user_type != UserType.PATIENT or not user_id:
+        raise HTTPException(status_code=403, detail="Not authorized as a patient")
+    
+    patient = db.query(Patient).filter(Patient.id == user_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    return patient
+
+# Helper to decode token (reusable)
+def decode_token(token: str) -> dict:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="Invalid credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = int(payload.get("sub"))
-        user_type: str = payload.get("user_type")
-        if user_id is None or user_type not in [UserType.DOCTOR, UserType.PATIENT]:
-            print("Invalid credentials in JWT token. JWT must have user_id(sub) and user_type")
-            print("Could not find user_id or user_type! (credentials_exception ERROR)")
-            raise credentials_exception
+        return payload
     except JWTError:
-        print("JWT Error!")
         raise credentials_exception
-
-    if user_type == UserType.DOCTOR:
-        user = db.query(Doctor).filter(Doctor.id == user_id).first()
-    else:
-        user = db.query(Patient).filter(Patient.id == user_id).first()
-
-    if user is None:
-        print("Current User NOT Found.")
-        raise credentials_exception
-    print("Current User Found. User Type: ", user_type)
-    return {"user": user, "user_type": user_type}
-
-def get_current_doctor(current_user: dict = Depends(get_current_user)):
-    """
-    Ensure the current user is a doctor.
-    """
-    if current_user["user_type"] != UserType.DOCTOR:
-        print("DOCTOR User  NOT Found.")
-        raise HTTPException(status_code=403, detail="Not authorized as a doctor")
-    print("DOCTOR User Found.")
-    return current_user["user"]
-
-def get_current_patient(current_user: dict = Depends(get_current_user)):
-    """
-    Ensure the current user is a patient.
-    """
-    if current_user["user_type"] != UserType.PATIENT:
-        print("PATIENT User NOT Found.")
-        raise HTTPException(status_code=403, detail="Not authorized as a patient")
-    print("PATIENT User Found.")
-    return current_user["user"]
