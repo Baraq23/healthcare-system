@@ -9,7 +9,7 @@ let allDoctors = [];
 let doctorsCache = []; // Cache for doctors by specialization
 let token = "";
 let myAppointments = [];
-let  userRole = "patient";
+let  userRole = "";
 // DOM Elements
 const views = {
     login: document.getElementById('login-view'),
@@ -27,6 +27,7 @@ const showRegisterBtn = document.getElementById('show-register-btn');
 
 const loginForm = document.getElementById('login-form');
 const registerUserTypeRadios = document.querySelectorAll('input[name="userType"]');
+const loginUserTypeRadios = document.getElementById('');
 const registerPatientForm = document.getElementById('register-patient-form');
 const registerDoctorForm = document.getElementById('register-doctor-form');
 const doctorSpecializationSelect = document.getElementById('doctor-specialization');
@@ -58,7 +59,7 @@ function displaySuccess(message) {
     errorMessageArea.classList.add('success-message');
     errorMessageArea.classList.remove('hidden');
     setTimeout(() => errorMessageArea.classList.add('hidden'), 5000);
-    setTimeout(() => errorMessageArea.classList.remove('success-message'), 5000);
+    setTimeout(() => errorMessageArea.classList.remove('success-message'), 10000);
 }
 
 function clearError() {
@@ -81,7 +82,7 @@ function updateNav() {
     if (currentUser) {
         authNav.classList.add('hidden');
         userNav.classList.remove('hidden');
-        userGreeting.textContent = `${currentUser.name || currentUser.email}  |  ${currentUser.type}`;
+        userGreeting.textContent = `${currentUser.name || currentUser.email}  |   ${currentUser.type.toUpperCase()}`;
     } else {
         authNav.classList.remove('hidden');
         userNav.classList.add('hidden');
@@ -143,9 +144,14 @@ async function handleLogin(event) {
     const body = new FormData(loginForm);
     const loginObject = Object.fromEntries(body.entries());
     // FastAPI OAuth2PasswordRequestForm expects 'email' and 'password'
-    // console.log(Object.fromEntries(body.entries()));
+    console.log("LOGIN ENTRIES", Object.fromEntries(body.entries()));
     try {
-        const responseData = await loginPatient(loginObject);
+        if (userRole == "") {
+            throw new Error("Please select user: patient/doctor...")
+        }
+        console.log("Handle login function")
+        const responseData = await userLogin(loginObject);
+        console.log("RESPONS FROM LOGIN: ", responseData);
         userID = responseData.patient_id;
         token = responseData.access_token;
         await fetchCurrentUser(); // This will set currentUser and update UI
@@ -161,13 +167,20 @@ async function handleLogin(event) {
     }
 }
 
-// Login patient
-async function loginPatient(loginObject) {
+// Login user
+async function userLogin(loginObject) {
+    console.log("USER LOGIN FUNCTION");
+    console.log("USER ROLE: ", userRole);
+
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/patients/login`, {
+        
+        const formBody = new URLSearchParams(loginObject);
+        console.log("FORMBODY", formBody);
+        const response = await fetch(`${API_BASE_URL}/${userRole}s/login`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(loginObject)
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formBody.toString()
         });
 
         const responseData = await response.json();
@@ -176,7 +189,7 @@ async function loginPatient(loginObject) {
 
         return responseData;
     } catch (error) {
-      throw error;
+      throw error.message;
     }      
 }
 
@@ -207,7 +220,7 @@ async function getAllDoctors() {
 
 async function getUserDetails() {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients/${userID}`, {
+    const response = await fetch(`${API_BASE_URL}/${userRole}s/me`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -217,13 +230,14 @@ async function getUserDetails() {
   });
 
     const responseData = await response.json();
+   
     console.log("CURRENT USER", responseData);
 
     if (!response.ok) throw new Error(responseData.detail);
-
+     userID = responseData.id;
     return responseData;
   } catch (error) {
-      console.log("Failed to fetch patients details:", error)
+      console.log("Failed to fetch patients details:", error.message)
 
   }
 }
@@ -325,7 +339,7 @@ async function handleRegister(event) {
 
     try {
         await CommonApiCall(endpoint, 'POST', data, false, false);
-        displayError(`Registration successful as ${userType}. Please login.`); // Use displayError for success temporarily
+        displaySuccess(`Registration successful as ${userType}. Please login.`); // Use displayError for success temporarily
         showView('login');
         loginForm.reset();
         form.reset(); // Reset the specific registration form
@@ -405,7 +419,7 @@ async function handleApptSpecializationChange() {
         apptDoctorSelect.disabled = false;
     } catch (error) {
         displayError(error.message);
-        apptDoctorSelect.innerHTML = '<option value="">Error loading doctors</option>';
+        apptDoctorSelect.innerHTML = `<option value="">${error.message}</option>`;
     }
 }
 
@@ -544,6 +558,7 @@ async function fetchPatientAppointments() {
 
 // get appiontments
 async function getMyAppointmets() {
+    console.log("User id to FETCH APPOINTMENTS,:", userID);
   try {
     const response = await fetch(`${API_BASE_URL}/appointments/patient/${userID}`, {
     method: "GET",
