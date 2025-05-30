@@ -322,7 +322,7 @@ erDiagram
 ## Future Improvements:
 - User validation: such email or phone numbeer verification system will be icorporated and other important details such as ID numbers, emergency contant details, and medical insurance cover details for patients will also be include.
 - Incorporate different hospitals to the system so that doctors can attend to patients in different hospitals that offer facilities and equipment in their field of specialization, am making the doctors more accessible by the patient.
-
+- Protect specialization endpoints and all access for the application administrators.
 
 
 

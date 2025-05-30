@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/patients", tags=["patients"])
 
+
+
 @router.post("/login")
 async def patient_login(
     form_data: OAuth2PasswordRequestForm = Depends(),
