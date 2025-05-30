@@ -806,6 +806,16 @@ function setupEventListeners() {
     registerPatientForm.addEventListener('submit', handleRegister);
     registerDoctorForm.addEventListener('submit', handleRegister);
 
+    // login radios
+    const container = document.getElementById('loginUserTypeRadios');
+    const radios = container.querySelectorAll('input[type="radio"][name="userType"]');
+    radios.forEach(radio => {
+        radio.addEventListener('change', (event) => {
+            userRole = event.target.value;
+            console.log('Selected user type:', userRole);
+        });
+    });
+
     registerUserTypeRadios.forEach(radio => {
         radio.addEventListener('change', (event) => {
             if (event.target.value === 'patient') {
