@@ -68,8 +68,9 @@ def create_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
     # Prepare doctor data
     doctor_data = doctor.model_dump(exclude={"password", "specialization_name", "first_name", "last_name"})
     doctor_data["specialization_id"] = specialization.id
-    doctor_data["first_name"] = doctor.first_name.upper()
-    doctor_data["last_name"] = doctor.last_name.upper()
+    
+    doctor_data["first_name"] = doctor.first_name[0].upper() + doctor.first_name[1:].lower()
+    doctor_data["last_name"] = doctor.last_name[0].upper() + doctor.last_name[1:].lower()
     doctor_data["password"] = hash_password(doctor.password)  # Hash password
 
     # Create and save doctor
