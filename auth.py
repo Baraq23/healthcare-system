@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models.doctor import Doctor
 from models.patient import Patient
+from schemas.patient import PatientResponse
+from schemas.doctor import DoctorResponse
 from utils.helper import verify_password
 
 # Configure logging
