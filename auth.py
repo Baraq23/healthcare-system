@@ -21,8 +21,18 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 180  # 3 hours
 
 # OAuth2 scheme for token validation
-oauth2_doctor_scheme = OAuth2PasswordBearer(tokenUrl="/doctors/login")
-oauth2_patient_scheme = OAuth2PasswordBearer(tokenUrl="/patients/login")
+# After - add unique scheme_name to avoid default extra scheme
+oauth2_doctor_scheme = OAuth2PasswordBearer(
+    tokenUrl="/doctors/login",
+    scheme_name="OAuth2Doctor"
+)
+oauth2_patient_scheme = OAuth2PasswordBearer(
+    tokenUrl="/patients/login",
+    scheme_name="OAuth2Patient"
+)
+
+
+
 
 # Pydantic model for login request
 class LoginRequest(BaseModel):
