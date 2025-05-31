@@ -83,7 +83,7 @@ function updateNav() {
     if (currentUser) {
         authNav.classList.add('hidden');
         userNav.classList.remove('hidden');
-        userGreeting.textContent = `${currentUser.name || currentUser.email}  |   ${userRole.toUpperCase()}`;
+        userGreeting.textContent = `${currentUser.name.toUpperCase()}  |   ${userRole.toUpperCase()}`;
     } else {
         authNav.classList.remove('hidden');
         userNav.classList.add('hidden');
