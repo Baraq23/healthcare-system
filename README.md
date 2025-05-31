@@ -57,7 +57,7 @@ mysql -u root -p
 # Press Enter when prompted for password
 
 # In the MySQL terminal, run:
-CREATE DATABASE healthcaredb;
+CREATE DATABASE healthcare_db;
 # This creates a database where FastAPI will manage tables.
 ```
 
