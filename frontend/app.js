@@ -151,6 +151,9 @@ async function handleLogin(event) {
         const responseData = await userLogin(loginObject);
 
         token = responseData.access_token;
+
+        localStorage.setItem('accessToken', token);
+        localStorage.setItem('userRole', userRole);
         await fetchCurrentUser(); // This will set currentUser and update UI
 
         allDoctors = await getAllDoctors();
@@ -246,7 +249,13 @@ async function fetchCurrentUser() {
             created_at: userData. created_at,
             type: userRole
         };
-        localStorage.setItem('currentUser', JSON.stringify({id: currentUser.id, name: currentUser.name, type: userRole, email: currentUser.email}));
+
+        localStorage.setItem('currentUser', JSON.stringify({
+            id: currentUser.id,
+            name: currentUser.name,
+            type: userRole,
+            email: currentUser.email
+        }));
         updateNav();
         if (userRole === 'patient') {
             showView('patientDashboard');
@@ -265,10 +274,11 @@ async function fetchCurrentUser() {
 }
 
 function logout() {
-    currentUser = null;
-    token="";
+    // Clear localStorage
     localStorage.removeItem('accessToken');
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('userRole');
+    
     updateNav();
     showView('login');
     clearDashboardData();
@@ -863,16 +873,25 @@ function calculateAge(birthDateString) {
 }
 
 // Initialization
-function initApp() {
+async function initApp() {
     setupEventListeners();
-    const storedUser = localStorage.getItem('currentUser');
-    const token = localStorage.getItem('accessToken');
 
-    if (token && storedUser) {
+    // Retrieve stored data
+    const storedToken = localStorage.getItem('accessToken');
+    const storedUser = localStorage.getItem('currentUser');
+    const storedRole = localStorage.getItem('userRole');
+
+    if (storedToken && storedUser && storedRole) {
         try {
+            token = storedToken;
+            userRole = storedRole;
             currentUser = JSON.parse(storedUser);
-            currentUser.token = token; 
+
             fetchCurrentUser(); 
+
+            if (userRole === 'patient') {
+            allDoctors = await getAllDoctors();
+      }
         } catch(e) {
             console.error("Error parsing stored user, logging out.");
             logout();
