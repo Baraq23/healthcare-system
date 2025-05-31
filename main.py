@@ -5,22 +5,57 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import OAuth2PasswordBearer
 from auth import get_current_doctor, get_current_patient
+from sqlalchemy.orm import Session
+from database import SessionLocal
 from schemas.doctor import DoctorResponse
 from schemas.patient import PatientResponse
+from models.specialization import Specialization
 
 
-# Creating tables before creating FastAPI app
-try:
-    Base.metadata.create_all(bind=engine)
-    print("All tables created successfully!")
-except Exception as e:
-    print(f"Error creating tables: {e}")
-
-
-
-
-# creating FastAPI app instance
 app = FastAPI()
+
+specializations_list = [
+    "Dermatology", "Neurology", "Cardiology", "Pediatrics", "Oncology",
+    "Psychiatry", "Radiology", "Surgery", "Urology", "Orthopedics",
+    "Gynecology", "Ophthalmology", "Gastroenterology", "Nephrology",
+    "Hematology", "Endocrinology", "Rheumatology", "Pulmonology",
+    "Anesthesiology", "Pathology", "Immunology", "Allergy", "Genetics",
+    "Microbiology", "Toxicology"
+]
+
+@app.on_event("startup")
+async def startup_event():
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("All tables created successfully!")
+
+        db = SessionLocal()
+        try:
+            specializations_list = [
+                "Dermatology", "Neurology", "Cardiology", "Pediatrics", "Oncology",
+                "Psychiatry", "Radiology", "Surgery", "Urology", "Orthopedics",
+                "Gynecology", "Ophthalmology", "Gastroenterology", "Nephrology",
+                "Hematology", "Endocrinology", "Rheumatology", "Pulmonology",
+                "Anesthesiology", "Pathology", "Immunology", "Allergy", "Genetics",
+                "Microbiology", "Toxicology"
+            ]
+
+            for name in specializations_list:
+                exists = db.query(Specialization).filter_by(name=name).first()
+                if not exists:
+                    spec_instance = Specialization(name=name) 
+                    db.add(spec_instance)
+            db.commit()
+            print("Specializations inserted/verified successfully!")
+        except Exception as e:
+            db.rollback()
+            print(f"Error inserting specializations: {e}")
+        finally:
+            db.close()
+
+    except Exception as e:
+        print(f"Error creating tables: {e}")
+
 
 oauth2_doctor_scheme = OAuth2PasswordBearer(
     tokenUrl="/doctors/login",
@@ -98,10 +133,10 @@ app.add_middleware(
 )
 
 
-app.include_router(patient.router)
-app.include_router(doctor.router)
-app.include_router(specialization.router)
-app.include_router(appointment.router)
+app.include_router(patient.router, prefix="/patients")
+app.include_router(doctor.router, prefix="/doctors")
+app.include_router(specialization.router, prefix="/specializations")
+app.include_router(appointment.router, prefix="/appointments")
 
 @app.get("/")
 def read_root():
