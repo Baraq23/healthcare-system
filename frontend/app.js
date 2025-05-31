@@ -586,13 +586,14 @@ async function bindAppts(appointments) {
          fullApptPromises = appointments.map(async (appointment) => {
             try {
                 let data = {};
-                if (userRole = "patient" ) {
+                if (userRole == "patient" ) {
                     data = await CommonApiCall(`/doctors/${appointment.doctor_id}`, 'GET', null, true);
                     return { ...appointment, doctor: data };
-                }
-                if (userRole = "doctor") {
+                } else if (userRole == "doctor") {
                     data = await CommonApiCall(`/patients/${appointment.patient_id}`, 'GET', null, true);
                     return { ...appointment, patient: data };
+                } else {
+                    return appointment;
                 }
             } catch (error) {
                 console.error(`Error binding doctor-patient for appointment ${appointment.id}:`, error.message);
@@ -639,7 +640,9 @@ async function fetchDoctorAppointments() {
     }
     try {
         const appointments = await getMyAppointmets();
-        renderAppointments(appointments, 'doctor');
+        myAppointments = await bindAppts(appointments);
+
+        renderAppointments(myAppointments, 'doctor');
     } catch (error) {
         displayError('Failed to fetch doctor appointments.');
     }
@@ -702,7 +705,7 @@ function renderAppointments(promAppointments, userType) {
             `;
         } else { // doctor
             details.innerHTML = `
-                <strong>Patient:</strong> ${appt.patient_first_name} ${appt.patient_last_name}<br>
+                <strong>Patient:</strong> ${appt.patient.first_name} ${appt.patient.last_name}  (${calculateAge(appt.patient.date_of_birth)}yrs)<br>
                 <strong>Date:</strong> ${dateString} <strong>Time:</strong> ${timeString}
             `;
         }

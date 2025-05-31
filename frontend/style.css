@@ -211,6 +211,8 @@ footer {
 .tab-content {
     min-height: 40dvh;
     max-height: 40dvh;
+    overflow-y: auto;
+
 }
 
 .tab-content ul {
