@@ -127,16 +127,3 @@ def get_all_appointments_for_doctor(db: Session, doctor_id: int) -> List[Appoint
     """Return all appointments for a doctor."""
     return db.query(AppointmentModel).filter(AppointmentModel.doctor_id == doctor_id).all()
 
-# -------------------- Slot Generation --------------------
-
-def generate_available_slots(
-    booked_slots: set, working_start: datetime, working_end: datetime, slot_interval_minutes: int, now: datetime
-) -> List[datetime]:
-    """Generate available slots for a doctor, filtering out booked and past slots."""
-    slots = []
-    current_slot = working_start
-    while current_slot < working_end:
-        if current_slot not in booked_slots and current_slot >= now:
-            slots.append(current_slot)
-        current_slot += timedelta(minutes=slot_interval_minutes)
-    return slots

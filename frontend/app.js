@@ -146,7 +146,7 @@ async function handleLogin(event) {
     // FastAPI OAuth2PasswordRequestForm expects 'email' and 'password'
     try {
         if (userRole == "") {
-            throw new Error("Please select user: patient/doctor...")
+            throw new Error("Please select user: patient / doctor...")
         }
         const responseData = await userLogin(loginObject);
 
@@ -436,31 +436,40 @@ async function handleApptDateChange() {
     }
 
     try {
-        const availability = await CommonApiCall(`/appointments/doctor/${doctorId}/${date}`, 'GET', null, true);
+        const bookedSlots = await CommonApiCall(`/appointments/doctor/${doctorId}/${date}`, 'GET', null, true);
+        console.log("BOOKED TIME SLOTS: ", bookedSlots);
+
         timeSlotsContainer.innerHTML = '';
         
+        // Define fixed slots outside conditions
         const fixedSlots = ["09:00:00", "10:00:00", "11:00:00", "12:00:00", "13:00:00", "14:00:00", "15:00:00", "16:00:00"];
         
-        if (availability && availability.length > 0) {
-            const availableSlotsMap = new Map(availability.map(slot => [slot.time, slot.is_available]));
+        if (Array.isArray(bookedSlots) && bookedSlots.length > 0) {
+            const bookedTimesSet = new Set(
+                bookedSlots.map(dateTimeStr => {
+                    const timePart = dateTimeStr.split('T')[1];
+                    return timePart ? timePart.substring(0, 8) : null;
+                }).filter(Boolean)
+            );
 
             fixedSlots.forEach(timeStr => {
-                const isAvailable = availableSlotsMap.get(timeStr) !== false; 
                 const slotButton = document.createElement('button');
                 slotButton.type = 'button';
                 slotButton.classList.add('time-slot-button');
-                slotButton.textContent = timeStr.substring(0, 5); 
+                slotButton.textContent = timeStr.substring(0, 5); // "HH:mm"
                 slotButton.dataset.time = timeStr;
 
-                if (!isAvailable) {
+                if (bookedTimesSet.has(timeStr)) {
                     slotButton.classList.add('booked');
                     slotButton.disabled = true;
                 } else {
                     slotButton.addEventListener('click', selectTimeSlot);
                 }
+
                 timeSlotsContainer.appendChild(slotButton);
             });
         } else {
+            // No booked slots, render all as available
             fixedSlots.forEach(timeStr => {
                 const slotButton = document.createElement('button');
                 slotButton.type = 'button';
@@ -472,9 +481,11 @@ async function handleApptDateChange() {
             });
         }
 
+        // Show message if no buttons created
         if (timeSlotsContainer.children.length === 0) {
             timeSlotsContainer.innerHTML = '<p>No available slots for this day.</p>';
         }
+
 
     } catch (error) {
         displayError(error.message);

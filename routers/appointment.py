@@ -16,7 +16,6 @@ from utils.helper import (
     get_all_appointments_for_patient,
     get_all_appointments_for_doctor,
     get_booked_slots_for_doctor,
-    generate_available_slots,
 )
 from services.appointment_service import create_appointment_with_lock
 from auth import get_current_doctor, get_current_patient
@@ -198,13 +197,13 @@ def complete_appointment(
     return appointment
 
 @router.get("/doctor/{doctor_id}/{date}", response_model=List[datetime])
-def get_available_slots(
+def get_booked_slots(
     doctor_id: int,
     date: date,
     db: Session = Depends(get_db),
 ):
     """
-    Retrieve available appointment slots for a doctor on a given date.
+    Retrieve booked time slots for a doctor on a given date.
     """
     print("DATE BOOKED RECIEVED IN BACKED: ", date)
     if not doctor_exists(db, doctor_id):
@@ -213,17 +212,16 @@ def get_available_slots(
     now = datetime.now(timezone.utc)
     start_time = datetime.combine(date, time(9, 0)).astimezone(timezone.utc)
     end_time = datetime.combine(date, time(17, 0)).astimezone(timezone.utc)
-
-    if start_time < now:
+    
+    
+    if end_time < now:
         raise HTTPException(status_code=400, detail="Cannot retrieve slots for past dates")
 
+
+    if start_time < now:
+        start_time = now
+
     booked_slots = set(get_booked_slots_for_doctor(db, doctor_id, start_time, end_time))
-    slots = generate_available_slots(
-        booked_slots=booked_slots,
-        working_start=start_time,
-        working_end=end_time,
-        slot_interval_minutes=60,
-        now=now
-    )
-    logger.info(f"Retrieved {len(slots)} available slots for doctor ID={doctor_id} on {date}")
-    return slots
+    print("BOOKED TIME SLOTS: ", booked_slots)
+    logger.info(f"Retrieved {len(booked_slots)} booked slots for doctor ID={doctor_id} on {date}")
+    return booked_slots
