@@ -21,25 +21,27 @@ from schemas.specialization import (
 
 router = APIRouter(prefix="/specializations", tags=["specializations"])
 
-@router.post("/", response_model=SpecializationSchema)
-def create_specialization(
-    specialization: SpecializationCreateSchema,
-    db: Session = Depends(get_db)
-):
-    """Create a new specialization."""
-    if specialization_exists_by_name(db, specialization.name):
-        raise HTTPException(
-            status_code=400,
-            detail="Specialization already exists"
-        )
-    # capitalize specialization name
-    specialization_data = specialization.model_dump(exclude={"sapecialization_name"})
-    specialization_data["specialization_name"] = specialization.name[0].upper() + specialization.name[1:].lower()
-    db_spec = SpecializationModel(**specialization.model_dump())
-    db.add(db_spec)
-    db.commit()
-    db.refresh(db_spec)
-    return db_spec
+# @router.post("/", response_model=SpecializationSchema)
+# def create_specialization(
+#     specialization: SpecializationCreateSchema,
+#     db: Session = Depends(get_db)
+# ):
+#     """Create a new specialization. Only availble for admins"""
+    
+        
+#     if specialization_exists_by_name(db, specialization.name):
+#         raise HTTPException(
+#             status_code=400,
+#             detail="Specialization already exists"
+#         )
+#     # capitalize specialization name
+#     specialization_data = specialization.model_dump(exclude={"sapecialization_name"})
+#     specialization_data["specialization_name"] = specialization.name[0].upper() + specialization.name[1:].lower()
+#     db_spec = SpecializationModel(**specialization.model_dump())
+#     db.add(db_spec)
+#     db.commit()
+#     db.refresh(db_spec)
+#     return db_spec
 
 @router.get("/", response_model=list[SpecializationSchema])
 def get_all_specializations(
