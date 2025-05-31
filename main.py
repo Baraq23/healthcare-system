@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import OAuth2PasswordBearer
 from auth import get_current_doctor, get_current_patient
+from schemas.doctor import DoctorResponse
+from schemas.patient import PatientResponse
 
 
 # Creating tables before creating FastAPI app
@@ -30,12 +32,12 @@ oauth2_patient_scheme = OAuth2PasswordBearer(
 )
 
 
-@app.get("/doctors/me")
+@app.get("/doctors/me", response_model=DoctorResponse)
 async def read_doctor_me(current_doctor: dict = Depends(get_current_doctor)):
     return current_doctor
 
 
-@app.get("/patients/me")
+@app.get("/patients/me", response_model=PatientResponse)
 async def read_patient_me(current_patient: dict = Depends(get_current_patient)):
     return current_patient
 
