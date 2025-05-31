@@ -9,7 +9,7 @@ from database import get_db
 from models.doctor import Doctor
 from models.specialization import Specialization
 from schemas.doctor import DoctorCreate, DoctorResponse, DoctorUpdate
-from utils.helper import get_specialization_by_name, specialization_exists_by_name, hash_password
+from utils.helper import get_specialization_by_name, hash_password
 from auth import authenticate_user, create_access_token, get_current_doctor, UserType
 
 
@@ -29,7 +29,7 @@ async def doctor_login(
     email = form_data.username  # This is the email sent as 'username'
     password = form_data.password
     # Authenticate doctor
-    user = authenticate_user(db, form_data.username, form_data.password, UserType.DOCTOR)
+    user = authenticate_user(db, email, password, UserType.DOCTOR)
     if not user:
         raise HTTPException(status_code=400, detail="Invalid email or password")
     
@@ -44,10 +44,9 @@ async def doctor_login(
 
 
 # protecting router
-@router.get("/me")
+@router.get("/me", response_model=DoctorResponse)
 async def read_doctor_profile(current_doctor: Doctor = Depends(get_current_doctor)):
     return current_doctor
-
 
 
 

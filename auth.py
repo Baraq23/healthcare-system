@@ -8,7 +8,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
 from models.doctor import Doctor
+from schemas.doctor import DoctorResponse
 from models.patient import Patient
+from schemas.patient import PatientResponse
 from utils.helper import verify_password
 
 # Configure logging
@@ -79,7 +81,7 @@ def authenticate_user(db: Session, email: str, password: str, user_type: str) ->
 async def get_current_doctor(
     token: str = Depends(oauth2_doctor_scheme), 
     db: Session = Depends(get_db)
-) -> Doctor:
+) -> DoctorResponse:
     payload = decode_token(token)
     user_type = payload.get("user_type")
     user_id = payload.get("sub")
@@ -97,7 +99,7 @@ async def get_current_doctor(
 async def get_current_patient(
     token: str = Depends(oauth2_patient_scheme), 
     db: Session = Depends(get_db)
-) -> Patient:
+) -> PatientResponse:
     payload = decode_token(token)
     user_type = payload.get("user_type")
     user_id = payload.get("sub")

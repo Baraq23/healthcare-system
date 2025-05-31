@@ -46,7 +46,7 @@ async def patient_login(
 
 
 
-@router.get("/me")
+@router.get("/me", response_model=PatientResponse)
 async def read_patient_profile(current_patient: Patient = Depends(get_current_patient)):
     return current_patient
 
@@ -67,6 +67,7 @@ def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
     patient_data["first_name"] = patient.first_name[0].upper() + patient.first_name[1:].lower()
     patient_data["last_name"] = patient.last_name[0].upper() + patient.last_name[1:].lower()
     patient_data["password"] = hash_password(patient.password)  # Hash password
+    
 
     # Create and save patient
     db_patient = Patient(**patient_data)
