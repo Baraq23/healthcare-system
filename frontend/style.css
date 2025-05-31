@@ -257,12 +257,14 @@ footer {
 .time-slot-button:hover {
     background-color: #e7f3ff;
 }
+
+
 .time-slot-button.booked {
     background-color: #e9ecef;
     color: #6c757d;
     border-color: #ced4da;
     cursor: not-allowed;
-    text-decoration: line-through;
+    /* text-decoration: line-through; */
 }
 .time-slot-button.selected {
     background-color: #007bff;

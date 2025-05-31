@@ -459,7 +459,22 @@ async function handleApptDateChange() {
                 slotButton.textContent = timeStr.substring(0, 5); // "HH:mm"
                 slotButton.dataset.time = timeStr;
 
+                console.log("time STR: ", timeStr);
+
+                const now = new Date();
+                const currentTimeStr = now.toTimeString().substring(0, 8);
+                const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+                const currentDate = new Date(`${today}T${currentTimeStr}`);
+                const compareDate = new Date(`${today}T${timeStr}`);
+
+                console.log("currentTime string", currentTimeStr);
+
+                
                 if (bookedTimesSet.has(timeStr)) {
+                    slotButton.classList.add('booked');
+                    slotButton.disabled = true;
+                } else if ((currentDate > compareDate)) {
                     slotButton.classList.add('booked');
                     slotButton.disabled = true;
                 } else {
@@ -539,11 +554,7 @@ async function fetchPatientAppointments() {
     }
     try {
         const appointments = await getMyAppointmets();
-        
         myAppointments = await bindAppts(appointments);
-        if (myAppointments.length == 0) {
-            throw new Error("Unexpected error occured while retrieving your appointments.")
-        }
         renderAppointments(myAppointments, 'patient');
     } catch (error) {
         displayError(error.message);
