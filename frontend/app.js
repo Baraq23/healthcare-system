@@ -157,7 +157,8 @@ async function handleLogin(event) {
         localStorage.setItem('userRole', userRole);
         await fetchCurrentUser(); // This will set currentUser and update UI
 
-        allDoctors = await getAllDoctors();
+        startDoctorsPolling();
+        localStorage.setItem('doctorsPollingActive', 'true');
 
     } catch (error) {
 
@@ -167,6 +168,39 @@ async function handleLogin(event) {
         showLoading(false);
     }
 }
+
+
+// -----------------UPDATE INFORMATION REGULARLY AFTER LOGIN---------------
+
+let doctorsPollingInterval = null;
+
+
+function startDoctorsPolling() {
+    // Fetch immediately, then every 30 seconds
+    fetchAndUpdateDoctors();
+    doctorsPollingInterval = setInterval(fetchAndUpdateDoctors, 30000); // 30 seconds
+}
+
+function stopDoctorsPolling() {
+    if (doctorsPollingInterval) clearInterval(doctorsPollingInterval);
+    localStorage.removeItem('doctorsPollingActive');
+}
+
+async function fetchAndUpdateDoctors() {
+    try {
+        allDoctors = await getAllDoctors();
+        console.log("udated list of doctors")        
+    } catch (e) {
+        console.warn("Failed to update doctors list", e.message);
+    }
+}
+
+// PERSIST THE DOCTORS LOADING
+window.addEventListener('load', () => {
+    if (localStorage.getItem('doctorsPollingActive') === 'true') {
+        startDoctorsPolling();
+    }
+});
 
 // Login user
 async function userLogin(loginObject) {
@@ -279,6 +313,13 @@ function logout() {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('currentUser');
     localStorage.removeItem('userRole');
+
+    stopDoctorsPolling();
+    currentUser = null;
+    userRole = "";
+    token = "";
+    myAppointments = [];
+
     
     updateNav();
     showView('login');
@@ -351,7 +392,7 @@ async function handleRegister(event) {
     }
 }
 
-function filterDoctorsBySpecialization(specializationId, allDoctors) {
+function filterDoctorsBySpecialization(specializationId) {
   return allDoctors.filter(doctor => doctor.specialization?.id === specializationId);
 }
 
@@ -402,7 +443,7 @@ async function handleApptSpecializationChange() {
     try {
 
        
-        doctorsCache = filterDoctorsBySpecialization(specializationId, allDoctors);
+        doctorsCache = filterDoctorsBySpecialization(specializationId);
         if (doctorsCache.length === 0) {
             throw new Error("Currently, there are no available doctors in this field of specialization.");
             
@@ -431,6 +472,9 @@ function handleApptDoctorChange() {
     bookAppointmentBtn.disabled = true;
 }
 
+// -------------TIME SLOTS RALTIME UPDATES (wip)---------
+
+// handle event of new date selected.
 async function handleApptDateChange() {
     const doctorId = parseInt(apptDoctorSelect.value);
     const date = apptDateInput.value;
