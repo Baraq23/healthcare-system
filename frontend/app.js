@@ -185,7 +185,7 @@ async function userLogin(loginObject) {
 
         return responseData;
     } catch (error) {
-      throw error.message;
+      throw error;
     }      
 }
 
@@ -494,11 +494,24 @@ async function handleApptDateChange() {
                 timeSlotsContainer.appendChild(slotButton);
             });
         } else {
+
+
+            const now = new Date();
+            const currentTimeStr = now.toTimeString().substring(0, 8);
+            const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+            const currentDate = new Date(`${today}T${currentTimeStr}`);
+            const compareDate = new Date(`${today}T${timeStr}`);
+
             // No booked slots, render all as available
             fixedSlots.forEach(timeStr => {
                 const slotButton = document.createElement('button');
                 slotButton.type = 'button';
                 slotButton.classList.add('time-slot-button');
+                if ((currentDate > compareDate)) {
+                    slotButton.classList.add('booked');
+                    slotButton.disabled = true;
+                }
                 slotButton.textContent = timeStr.substring(0, 5);
                 slotButton.dataset.time = timeStr;
                 slotButton.addEventListener('click', selectTimeSlot);
