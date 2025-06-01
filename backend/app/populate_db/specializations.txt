@@ -1,0 +1,12 @@
+Cardiology
+Dermatology
+Neurology
+Pediatrics
+Psychiatry
+Oncology
+Orthopedics
+Radiology
+Urology
+Gastroenterology
+Endocrinology
+Ophthalmology
