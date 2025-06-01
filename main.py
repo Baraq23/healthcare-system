@@ -7,12 +7,16 @@ from fastapi.security import OAuth2PasswordBearer
 from auth import get_current_doctor, get_current_patient
 from schemas.doctor import DoctorResponse
 from schemas.patient import PatientResponse
+from populate_db.specializations_table import insert_specializations
+
 
 
 # Creating tables before creating FastAPI app
 try:
     Base.metadata.create_all(bind=engine)
     print("All tables created successfully!")
+    insert_specializations()
+
 except Exception as e:
     print(f"Error creating tables: {e}")
 
