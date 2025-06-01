@@ -4,10 +4,8 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
-
 from database import get_db
 from models.doctor import Doctor
-from models.specialization import Specialization
 from schemas.doctor import DoctorCreate, DoctorResponse, DoctorUpdate
 from utils.helper import get_specialization_by_name, hash_password
 from auth import authenticate_user, create_access_token, get_current_doctor, UserType
