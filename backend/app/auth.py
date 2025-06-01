@@ -18,16 +18,15 @@ import os
 
 load_dotenv()  # Loads variables from a .env file if present
 
+# JWT settings 
+SECRET_KEY = os.getenv("SECRET_KEY") 
+ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
-
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# JWT settings (replace with environment variables in production)
-SECRET_KEY = "healthcare123" 
-ALGORITHM = "HS256"
 
 # OAuth2 scheme for token validation
 # After - add unique scheme_name to avoid default extra scheme
