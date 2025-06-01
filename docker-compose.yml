@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      - mysql
+      - redis
+    volumes:
+      - ./backend:/app  # For live reload
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    env_file: .env
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+
+  redis:
+    image: redis:alpine
+    restart: always
+
+volumes:
+  mysql_data:

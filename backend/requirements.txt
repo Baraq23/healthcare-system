@@ -1,0 +1,10 @@
+fastapi[standard]
+uvicorn[standard]
+sqlalchemy
+pymysql
+redis
+passlib[bcrypt]
+python-jose[cryptography]
+fastapi-security
+pydantic>=2.0
+
