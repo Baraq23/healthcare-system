@@ -108,7 +108,7 @@ async function CommonApiCall(endpoint, method = 'GET', body = null, requiresAuth
     if (body) {
         if (isFormData) {
             const formContent = Object.fromEntries(body.entries());
-            // config.body = JSON.stringify(formContent);
+            config.body = JSON.stringify(formContent);
             headers['Content-Type'] = 'application/json';
             
         } else {
@@ -160,7 +160,7 @@ async function handleLogin(event) {
 
     } catch (error) {
 
-        displayError(error.message || 'An unexpected error occurred.');
+        displayError(error.message || 'Account not found, Please register');
 
     } finally {
         showLoading(false);
@@ -356,7 +356,7 @@ function filterDoctorsBySpecialization(specializationId, allDoctors) {
 
 async function loadSpecializations() {
     try {
-        specializationsCache = await CommonApiCall('/specializations', 'GET', null, false); 
+        specializationsCache = await CommonApiCall('/specializations/', 'GET', null, false); 
         doctorSpecializationSelect.innerHTML = '<option value="">Select Specialization</option>';
         apptSpecializationSelect.innerHTML = '<option value="">Select Specialization</option>';
         specializationsCache.forEach(spec => {

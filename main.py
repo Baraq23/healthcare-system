@@ -88,10 +88,10 @@ async def read_patient_me(current_patient: dict = Depends(get_current_patient)):
     return current_patient
 
 # Routers
-app.include_router(patient.router, prefix="/patients")
-app.include_router(doctor.router, prefix="/doctors")
-app.include_router(specialization.router, prefix="/specializations")
-app.include_router(appointment.router, prefix="/appointments")
+app.include_router(patient.router)
+app.include_router(doctor.router)
+app.include_router(specialization.router)
+app.include_router(appointment.router)
 
 # Custom OpenAPI
 def custom_openapi():
