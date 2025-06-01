@@ -11,6 +11,7 @@ let token = "";
 let myAppointments = [];
 let userRole="";
 
+
 // DOM Elements
 const views = {
     login: document.getElementById('login-view'),
@@ -476,7 +477,7 @@ async function handleApptDateChange() {
                 const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
 
                 const currentDate = new Date(`${today}T${currentTimeStr}`);
-                const compareDate = new Date(`${today}T${timeStr}`);
+                const compareDate = new Date(`${date}T${timeStr}`);
 
                 console.log("currentTime string", currentTimeStr);
 
@@ -500,11 +501,14 @@ async function handleApptDateChange() {
             const currentTimeStr = now.toTimeString().substring(0, 8);
             const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
 
-            const currentDate = new Date(`${today}T${currentTimeStr}`);
-            const compareDate = new Date(`${today}T${timeStr}`);
+            
 
             // No booked slots, render all as available
             fixedSlots.forEach(timeStr => {
+
+                const currentDate = new Date(`${today}T${currentTimeStr}`);
+                const compareDate = new Date(`${date}T${timeStr}`);
+
                 const slotButton = document.createElement('button');
                 slotButton.type = 'button';
                 slotButton.classList.add('time-slot-button');
