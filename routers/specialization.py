@@ -1,12 +1,10 @@
-# routers/specializations.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from database import get_db
 from models.specialization import Specialization as SpecializationModel
-from schemas.specialization import SpecializationCreate as SpecializationCreateSchema
+# from schemas.specialization import SpecializationCreate as SpecializationCreateSchema
 from schemas.specialization import Specialization as SpecializationSchema
 from utils.helper import get_specialization_by_id_or_404
-from models.specialization import Specialization as SpecializationModel
 from schemas.specialization import Specialization as SpecializationSchema
 
 
