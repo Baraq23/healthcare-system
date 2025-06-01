@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from database import get_db
-from models.specialization import Specialization as SpecializationModel
+from app.database import get_db
+from app.models.specialization import Specialization as SpecializationModel
 # from schemas.specialization import SpecializationCreate as SpecializationCreateSchema
-from schemas.specialization import Specialization as SpecializationSchema
-from utils.helper import get_specialization_by_id_or_404
-from models.specialization import Specialization as SpecializationModel
-from schemas.specialization import Specialization as SpecializationSchema
+from app.schemas.specialization import Specialization as SpecializationSchema
+from app.utils.helper import get_specialization_by_id_or_404
+from app.models.specialization import Specialization as SpecializationModel
+from app.schemas.specialization import Specialization as SpecializationSchema
 
 router = APIRouter(prefix="/specializations", tags=["specializations"])
 

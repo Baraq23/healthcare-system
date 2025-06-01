@@ -4,15 +4,20 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import timedelta
 from pydantic import BaseModel, EmailStr
-from database import get_db
-from models.patient import Patient
-from schemas.patient import PatientCreate, PatientResponse, PatientUpdate
-from utils.helper import hash_password
-from auth import authenticate_user, create_access_token, get_current_patient, UserType
+from app.database import get_db
+from app.models.patient import Patient
+from app.schemas.patient import PatientCreate, PatientResponse, PatientUpdate
+from app.utils.helper import hash_password
+from app.auth import authenticate_user, create_access_token, get_current_patient, UserType
 from fastapi.security import OAuth2PasswordRequestForm
+from dotenv import load_dotenv
+import os
 
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 180 # 3 hours
+load_dotenv()  # Loads variables from a .env file if present
+
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from datetime import timedelta, datetime
 from fastapi import HTTPException
 
-from models.appointment import Appointment as AppointmentModel, AppointmentStatus as AppointmentStatusModel
-from utils.helper import check_doctor_availability, check_patient_available_at_time
-from core.redis import acquire_doctor_lock, release_doctor_lock, acquire_patient_lock, release_patient_lock
+from app.models.appointment import Appointment as AppointmentModel, AppointmentStatus as AppointmentStatusModel
+from app.utils.helper import check_doctor_availability, check_patient_available_at_time
+from app.core.redis import acquire_doctor_lock, release_doctor_lock, acquire_patient_lock, release_patient_lock
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

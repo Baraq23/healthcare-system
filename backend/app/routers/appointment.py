@@ -3,12 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import time, datetime, timezone, date
-from models.doctor import Doctor
-
-from database import get_db
-from models.appointment import Appointment as AppointmentModel, AppointmentStatus as AppointmentStatusModel
-from schemas.appointment import AppointmentCreate as AppointmentCreateModel, AppointmentResponse as AppointmentResponseModel
-from utils.helper import (
+from app.models.doctor import Doctor
+from app.database import get_db
+from app.models.appointment import Appointment as AppointmentModel, AppointmentStatus as AppointmentStatusModel
+from app.schemas.appointment import AppointmentCreate as AppointmentCreateModel, AppointmentResponse as AppointmentResponseModel
+from app.utils.helper import (
     doctor_exists,
     patient_exists,    
     patient_has_future_appointment_with_doctor,
@@ -17,8 +16,8 @@ from utils.helper import (
     get_all_appointments_for_doctor,
     get_booked_slots_for_doctor,
 )
-from services.appointment_service import create_appointment_with_lock
-from auth import get_current_doctor, get_current_patient
+from app.services.appointment_service import create_appointment_with_lock
+from app.auth import get_current_doctor, get_current_patient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

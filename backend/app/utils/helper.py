@@ -4,10 +4,10 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 
-from models.doctor import Doctor as DoctorModel
-from models.patient import Patient as PatientModel
-from models.specialization import Specialization as SpecializationModel
-from models.appointment import Appointment as AppointmentModel, AppointmentStatus as AppointmentStatusModel
+from app.models.doctor import Doctor as DoctorModel
+from app.models.patient import Patient as PatientModel
+from app.models.specialization import Specialization as SpecializationModel
+from app.models.appointment import Appointment as AppointmentModel, AppointmentStatus as AppointmentStatusModel
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

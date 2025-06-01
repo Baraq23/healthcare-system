@@ -6,12 +6,20 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from database import get_db
-from models.doctor import Doctor
-from models.patient import Patient
-from schemas.patient import PatientResponse
-from schemas.doctor import DoctorResponse
-from utils.helper import verify_password
+from app.database import get_db
+from app.models.doctor import Doctor
+from app.models.patient import Patient
+from app.schemas.patient import PatientResponse
+from app.schemas.doctor import DoctorResponse
+from app.utils.helper import verify_password
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv()  # Loads variables from a .env file if present
+
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +28,6 @@ logger = logging.getLogger(__name__)
 # JWT settings (replace with environment variables in production)
 SECRET_KEY = "healthcare123" 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 180  # 3 hours
 
 # OAuth2 scheme for token validation
 # After - add unique scheme_name to avoid default extra scheme

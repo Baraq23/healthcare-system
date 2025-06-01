@@ -1,13 +1,13 @@
 from fastapi import FastAPI, Depends
-from database import Base, engine  
-from routers import patient, doctor, specialization, appointment
+from app.database import Base, engine  
+from app.routers import patient, doctor, specialization, appointment
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import OAuth2PasswordBearer
-from auth import get_current_doctor, get_current_patient
-from schemas.doctor import DoctorResponse
-from schemas.patient import PatientResponse
-from populate_db.specializations_table import insert_specializations
+from app.auth import get_current_doctor, get_current_patient
+from app.schemas.doctor import DoctorResponse
+from app.schemas.patient import PatientResponse
+from app.populate_db.specializations_table import insert_specializations
 
 
 

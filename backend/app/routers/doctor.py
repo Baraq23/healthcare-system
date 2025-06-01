@@ -4,14 +4,19 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
-from database import get_db
-from models.doctor import Doctor
-from schemas.doctor import DoctorCreate, DoctorResponse, DoctorUpdate
-from utils.helper import get_specialization_by_name, hash_password
-from auth import authenticate_user, create_access_token, get_current_doctor, UserType
+from app.database import get_db
+from app.models.doctor import Doctor
+from app.schemas.doctor import DoctorCreate, DoctorResponse, DoctorUpdate
+from app.utils.helper import get_specialization_by_name, hash_password
+from app.auth import authenticate_user, create_access_token, get_current_doctor, UserType
+from dotenv import load_dotenv
+import os
 
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 180 # 3 hours
+load_dotenv()  # Loads variables from a .env file if present
+
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

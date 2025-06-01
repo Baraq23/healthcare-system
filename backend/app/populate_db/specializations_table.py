@@ -1,5 +1,5 @@
-from database import SessionLocal
-from models.specialization import Specialization
+from app.database import SessionLocal
+from app.models.specialization import Specialization
 import os
 
 
