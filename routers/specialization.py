@@ -5,22 +5,14 @@ from database import get_db
 from models.specialization import Specialization as SpecializationModel
 from schemas.specialization import SpecializationCreate as SpecializationCreateSchema
 from schemas.specialization import Specialization as SpecializationSchema
-
-
-
-from utils.helper import (
-    specialization_exists_by_name,
-    get_specialization_by_id_or_404,
-)
-
+from utils.helper import get_specialization_by_id_or_404
 from models.specialization import Specialization as SpecializationModel
-from schemas.specialization import (
-    SpecializationCreate as SpecializationCreateSchema,
-    Specialization as SpecializationSchema,
-)
+from schemas.specialization import Specialization as SpecializationSchema
+
+
 
 router = APIRouter(prefix="/specializations", tags=["specializations"])
-
+# THIS END POINT WILL BE USED BY ADMINS TO CREATE SPECIALIZATIONS
 # @router.post("/", response_model=SpecializationSchema)
 # def create_specialization(
 #     specialization: SpecializationCreateSchema,
