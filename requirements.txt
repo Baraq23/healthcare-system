@@ -6,4 +6,4 @@ redis
 passlib[bcrypt]
 python-jose[cryptography]
 fastapi-security
-pydantic
+pydantic>=2.0
