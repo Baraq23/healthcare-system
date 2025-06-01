@@ -683,7 +683,7 @@ async function markAppointmentCompleted(appointmentId) {
 async function viewPatientDetails(patientId) {
     try {
         const patient = await CommonApiCall(`/patients/${patientId}`, 'GET'); 
-        alert(`Patient Details:\nName: ${patient.first_name} ${patient.last_name}\nEmail: ${patient.email}\nPhone: ${patient.phone_number}\nAge: ${calculateAge(patient.date_of_birth)}yrs`);
+        alert(`Patient Details:\nName: ${patient.first_name} ${patient.last_name}\nEmail: ${patient.email}\nPhone: ${patient.phone}\nAge: ${calculateAge(patient.date_of_birth)}yrs`);
     } catch (error) {
         displayError(error.message);
     }
