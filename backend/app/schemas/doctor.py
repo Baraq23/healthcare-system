@@ -2,8 +2,7 @@ from datetime import datetime, date
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 from enum import Enum
-
-from schemas.specialization import Specialization as SpecializationModel
+from app.schemas.specialization import Specialization as SpecializationModel
 
 class Gender(str, Enum):
     MALE = "male"

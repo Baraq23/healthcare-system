@@ -16,7 +16,7 @@ import os
 
 load_dotenv()  # Loads variables from a .env file if present
 
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
