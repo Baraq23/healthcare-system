@@ -91,6 +91,7 @@ def custom_openapi():
 origins = [
     "http://0.0.0.0:5000",  # frontend origin
     "http://localhost:5000", # access frontend via localhost
+    "https://bookyourdoctor.netlify.app/", # hosted frontend in netlify.
 ]
 
 app.add_middleware(
