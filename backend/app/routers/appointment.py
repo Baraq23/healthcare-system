@@ -178,9 +178,9 @@ def complete_appointment(
     
     
     now = datetime.now(timezone.utc)
-    created_at_aware = appointment.created_at.replace(tzinfo=timezone.utc)
+    appointment_time = appointment.scheduled_datetime.replace(tzinfo=timezone.utc)
 
-    if created_at_aware >= now:
+    if appointment_time >= now:
         raise HTTPException(status_code=400, detail="Can’t mark appointment as complete before scheduled time. Contact patient to cancel or reschedule.")
         
         
