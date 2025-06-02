@@ -2,19 +2,26 @@ import logging
 import redis
 from datetime import datetime
 from time import sleep
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Get Redis host from environment variable (with localhost as default)
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost") 
+
 # Redis connection with pooling
 redis_client = redis.Redis(
-    host='localhost',
+    host=REDIS_HOST,  
     port=6379,
     db=0,
-    max_connections=10,  # Connection pool size
-    decode_responses=True  # Automatically decode responses to strings
+    max_connections=10,
+    decode_responses=True,
+    socket_connect_timeout=5,  
+    socket_timeout=5           
 )
+
 
 def acquire_doctor_lock(doctor_id: int, scheduled_datetime: datetime, timeout: int = 10, retries: int = 3, delay: float = 0.5) -> bool:
     """
@@ -57,3 +64,13 @@ def release_patient_lock(patient_id: int, scheduled_datetime: datetime) -> None:
     lock_key = f"appointment:patient:{patient_id}:{scheduled_datetime.isoformat()}"
     redis_client.delete(lock_key)
     logger.debug(f"Released patient lock: {lock_key}")
+    
+    
+    
+# Test redis connection
+if __name__ == "__main__":
+    try:
+        redis_client.ping()
+        logger.info("✅ Redis connection successful!")
+    except redis.ConnectionError as e:
+        logger.error(f"❌ Redis connection failed: {e}")

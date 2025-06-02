@@ -12,11 +12,9 @@ from app.models.patient import Patient
 from app.schemas.patient import PatientResponse
 from app.schemas.doctor import DoctorResponse
 from app.utils.helper import verify_password
-from dotenv import load_dotenv
 import os
 
 
-load_dotenv()  # Loads variables from a .env file if present
 
 # JWT settings 
 SECRET_KEY = os.getenv("SECRET_KEY","healthcare123") 
