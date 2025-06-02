@@ -47,8 +47,8 @@ def create_appointment(
     
     # Validate slot alignment (60-minute intervals)
     print("Validate slot alignment ...")
-    if scheduled_utc.minute % 00 != 0 or scheduled_utc.second != 0:
-        raise HTTPException(status_code=400, detail="Appointments must be scheduled on 1hr-minute intervals (e.g., 09:00, 10:00).")
+    if scheduled_utc.minute != 0 or scheduled_utc.second != 0:
+        raise HTTPException(status_code=400, detail="Appointments must be scheduled on 1 hour intervals (e.g., 09:00, 10:00).")
 
     # Check doctor and patient existence
     # print("Check doctor and patient existence...")
