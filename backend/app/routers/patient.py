@@ -36,7 +36,6 @@ async def patient_login(
 
     # Authenticate patient
     user = authenticate_user(db, email, password, UserType.PATIENT)
-    print("THIS IS THE USER LOGING IN: ", user)
     if not user:
         raise HTTPException(status_code=400, detail="Invalid email or password")
     
@@ -45,7 +44,6 @@ async def patient_login(
         data={"sub": str(user["id"]), "user_type": UserType.PATIENT},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    print("ACCESS TOKENS: ", )
     return {"access_token": access_token, "token_type": "bearer"}
 
 
