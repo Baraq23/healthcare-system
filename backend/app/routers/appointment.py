@@ -45,17 +45,17 @@ def create_appointment(
     if not (time(9, 0) <= scheduled_utc.time() < time(17, 0)):
         raise HTTPException(status_code=400, detail="Appointments must be scheduled between 09:00 and 17:00.")
     
-    # Validate slot alignment (30-minute intervals)
-    print("Validate slot alignment (30-minute intervals)...")
-    if scheduled_utc.minute % 30 != 0 or scheduled_utc.second != 0:
-        raise HTTPException(status_code=400, detail="Appointments must be scheduled on 30-minute intervals (e.g., 09:00, 09:30).")
+    # Validate slot alignment (60-minute intervals)
+    print("Validate slot alignment ...")
+    if scheduled_utc.minute % 00 != 0 or scheduled_utc.second != 0:
+        raise HTTPException(status_code=400, detail="Appointments must be scheduled on 1hr-minute intervals (e.g., 09:00, 10:00).")
 
     # Check doctor and patient existence
-    print("Check doctor and patient existence...")
-    print("patient appointment value", appointment.patient_id)
-    print("Doctor appointment value", appointment.doctor_id)
-    print("Patient exists", patient_exists(db, appointment.patient_id))
-    print("Doctor exists", doctor_exists(db, appointment.doctor_id))
+    # print("Check doctor and patient existence...")
+    # print("patient appointment value", appointment.patient_id)
+    # print("Doctor appointment value", appointment.doctor_id)
+    # print("Patient exists", patient_exists(db, appointment.patient_id))
+    # print("Doctor exists", doctor_exists(db, appointment.doctor_id))
     if not doctor_exists(db, appointment.doctor_id):
         raise HTTPException(status_code=404, detail="Doctor not found")
     if not patient_exists(db, appointment.patient_id):
