@@ -153,12 +153,12 @@ async function handleLogin(event) {
 
         token = responseData.access_token;
 
-        localStorage.setItem('accessToken', token);
-        localStorage.setItem('userRole', userRole);
+        sessionStorage.setItem('accessToken', token);
+        sessionStorage.setItem('userRole', userRole);
         await fetchCurrentUser(); // This will set currentUser and update UI
 
         startDoctorsPolling();
-        localStorage.setItem('doctorsPollingActive', 'true');
+        sessionStorage.setItem('doctorsPollingActive', 'true');
 
     } catch (error) {
 
@@ -183,7 +183,7 @@ function startDoctorsPolling() {
 
 function stopDoctorsPolling() {
     if (doctorsPollingInterval) clearInterval(doctorsPollingInterval);
-    localStorage.removeItem('doctorsPollingActive');
+    sessionStorage.removeItem('doctorsPollingActive');
 }
 
 async function fetchAndUpdateDoctors() {
@@ -197,7 +197,7 @@ async function fetchAndUpdateDoctors() {
 
 // PERSIST THE DOCTORS LOADING
 window.addEventListener('load', () => {
-    if (localStorage.getItem('doctorsPollingActive') === 'true') {
+    if (sessionStorage.getItem('doctorsPollingActive') === 'true') {
         startDoctorsPolling();
     }
 });
@@ -285,7 +285,7 @@ async function fetchCurrentUser() {
             type: userRole
         };
 
-        localStorage.setItem('currentUser', JSON.stringify({
+        sessionStorage.setItem('currentUser', JSON.stringify({
             id: currentUser.id,
             name: currentUser.name,
             type: userRole,
@@ -309,10 +309,9 @@ async function fetchCurrentUser() {
 }
 
 function logout() {
-    // Clear localStorage
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('userRole');
+    // Clear sessionStorage
+
+    sessionStorage.clear();
 
     stopDoctorsPolling();
     currentUser = null;
@@ -938,9 +937,9 @@ async function initApp() {
     setupEventListeners();
 
     // Retrieve stored data
-    const storedToken = localStorage.getItem('accessToken');
-    const storedUser = localStorage.getItem('currentUser');
-    const storedRole = localStorage.getItem('userRole');
+    const storedToken = sessionStorage.getItem('accessToken');
+    const storedUser = sessionStorage.getItem('currentUser');
+    const storedRole = sessionStorage.getItem('userRole');
 
     if (storedToken && storedUser && storedRole) {
         try {
