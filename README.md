@@ -6,6 +6,11 @@ This project is a healthcare appointment scheduling system. It focuses on design
 
 The backend is built using Python FastAPI for the API framework, ORM-Alchemy for data modeling and database interactions, and MySQL as the database.
 
+## Swagger Documentation
+
+- You can view and test the available API endpoints through the automatically generated Swagger UI: [Open Swagger Docs.](https://healthcare-live-demo-production-bf1a.up.railway.app/docs) 
+
+
 ## Project Structure:
 
     healthcare-system/
