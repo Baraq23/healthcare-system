@@ -2,34 +2,38 @@
 
 ## Overview
 
-This project is a healthcare appointment scheduling system. It focuses on designing and implementing a robust, secure backend service that manages patients and enables them to schedule appointments with doctors.
+This project is a healthcare appointment scheduling system designed to provide a  secure backend service for managing patients and enabling them to book appointments with doctors seamlessly and without conflicts.
 
-The backend is built using Python FastAPI for the API framework, ORM-Alchemy for data modeling and database interactions, and MySQL as the database.
+The backend is developed using Python’s FastAPI framework for building APIs, SQLAlchemy ORM for data modeling and database operations, and MySQL as the primary database. Redis is integrated to help prevent double bookings, ensuring smooth scheduling even under high user traffic.
 
 ## Swagger Documentation
 
 - You can view and test the available API endpoints through the automatically generated Swagger UI: [Open Swagger Docs.](https://healthcare-live-demo-production-bf1a.up.railway.app/docs) 
 
 
-## Project Structure:
+## Project Structure:     
 
-    healthcare-system/
-    ├── venv/                 # Virtual environment
-    ├── routers/              # API endpoints
-    ├── core/                 # redis files
-    ├── utils/                # helper funtion
-    ├── models/               # Database models
-    ├── schemas/              # Pydantic schemas
-    ├── services/             # Appoint sevice management.
-    ├── main.py               # FastAPI app instance
-    ├── database.py           # DB connection
-    ├── auth.py               # Authentication functionalities.
-    ├── requirements.txt      # Dependencies
-    ├── setup_venv.sh         # Dependencies installer script
-    ├── .env                  # Environment variables
-    ├── .gitignore            # Ignore rules
-    └── README.md             # Project Documentation
-
+      
+    healthcare-system/ 
+        ├── backend/
+        │   ├── app/
+        │   │   ├── auth.py                 # Authentication functionalities.
+        │   │   ├── core                    # redis files
+        │   │   ├── database.py             # DB connection
+        │   │   ├── models/                 # Database models
+        │   │   ├── populate_db/            # Initialize db with doctor specializations
+        │   │   ├── routers/                # API endpoints
+        │   │   ├── schemas/                # Pydantic schemas
+        │   │   ├── services/               # Appoint sevice management.
+        │   │   └── utils/                  # helper funtion
+        │   ├── Dockerfile                  # Building the fastAPI image
+        │   ├── entrypoint.sh               # Script for the app's stating point
+        │   ├── main.py                     # FastAPI app instance
+        │   ├── requirements.txt            # Dependencies
+        │   └── setup_venv.sh               # Dependencies installer script
+        ├── docker-compose.yml              # Building Docker container(FastApi+Mysql+Redis)
+        ├── frontend                        # Frontend files.
+        └── README.md                       # Project Documentation
 
 ### List of Packages Required
 
