@@ -89,9 +89,9 @@ def custom_openapi():
 
 # Configure CORS
 origins = [
-    "http://0.0.0.0:5000",  # frontend origin
-    "http://localhost:5000", # access frontend via localhost
-    "https://bookyourdoctor.netlify.app/", # hosted frontend in netlify.
+    "http://0.0.0.0:5000", 
+    "http://localhost:5000", 
+    "https://bookyourdoctor.netlify.app/", 
 ]
 
 app.add_middleware(

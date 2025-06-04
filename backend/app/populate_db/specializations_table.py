@@ -3,7 +3,6 @@ from app.models.specialization import Specialization
 import os
 
 
-
 file_name = "specializations.txt"
 file_path = os.path.join(os.path.dirname(__file__), file_name)
 

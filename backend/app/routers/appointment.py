@@ -50,12 +50,6 @@ def create_appointment(
     if scheduled_utc.minute != 0 or scheduled_utc.second != 0:
         raise HTTPException(status_code=400, detail="Appointments must be scheduled on 1 hour intervals (e.g., 09:00, 10:00).")
 
-    # Check doctor and patient existence
-    # print("Check doctor and patient existence...")
-    # print("patient appointment value", appointment.patient_id)
-    # print("Doctor appointment value", appointment.doctor_id)
-    # print("Patient exists", patient_exists(db, appointment.patient_id))
-    # print("Doctor exists", doctor_exists(db, appointment.doctor_id))
     if not doctor_exists(db, appointment.doctor_id):
         raise HTTPException(status_code=404, detail="Doctor not found")
     if not patient_exists(db, appointment.patient_id):
@@ -141,9 +135,7 @@ def cancel_appointment(
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
     
-    # Only the patient or their doctor can cancel
-    print("CURRENT USER: ", current_user)
-    print("this appointment: ", appointment)
+    # Only the patient can cancel
     if (appointment.patient_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized to cancel this appointment")
 
@@ -172,7 +164,6 @@ def complete_appointment(
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
     
-    # Only the patient or their doctor can cancel
     if (appointment.doctor_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized to mark this appointment as complete.")
     

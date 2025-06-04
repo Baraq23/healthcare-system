@@ -10,8 +10,8 @@ from app.schemas.patient import PatientCreate, PatientResponse, PatientUpdate
 from app.utils.helper import hash_password
 from app.auth import authenticate_user, create_access_token, get_current_patient, UserType
 from fastapi.security import OAuth2PasswordRequestForm
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
 
 load_dotenv()  # Loads variables from a .env file if present

@@ -3,6 +3,10 @@ import redis
 from datetime import datetime
 from time import sleep
 import os
+from dotenv import load_dotenv
+
+
+load_dotenv() 
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

@@ -13,7 +13,10 @@ from app.schemas.patient import PatientResponse
 from app.schemas.doctor import DoctorResponse
 from app.utils.helper import verify_password
 import os
+from dotenv import load_dotenv
 
+
+load_dotenv() 
 
 
 # JWT settings 
@@ -28,7 +31,6 @@ logger = logging.getLogger(__name__)
 
 
 # OAuth2 scheme for token validation
-# After - add unique scheme_name to avoid default extra scheme
 oauth2_doctor_scheme = OAuth2PasswordBearer(
     tokenUrl="/doctors/login",
     scheme_name="OAuth2Doctor"
@@ -118,7 +120,7 @@ async def get_current_patient(
     
     return patient
 
-# Helper to decode token (reusable)
+# Helper to decode token
 def decode_token(token: str) -> dict:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

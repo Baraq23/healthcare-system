@@ -9,11 +9,12 @@ from app.models.doctor import Doctor
 from app.schemas.doctor import DoctorCreate, DoctorResponse, DoctorUpdate
 from app.utils.helper import get_specialization_by_name, hash_password
 from app.auth import authenticate_user, create_access_token, get_current_doctor, UserType
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
 
-load_dotenv()  # Loads variables from a .env file if present
+load_dotenv() 
+
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
