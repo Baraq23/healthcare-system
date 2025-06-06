@@ -2,9 +2,25 @@
 
 ## Overview
 
-This project is a healthcare appointment scheduling system. It focuses on designing and implementing a robust, secure backend service that manages patients and enables them to schedule appointments with doctors.
+- This project is a healthcare appointment scheduling system designed to provide a robust and secure backend service. It allows patients to register and schedule appointments with doctors efficiently.
 
-The backend is built using Python FastAPI for the API framework, ORM-Alchemy for data modeling and database interactions, and MySQL as the database.
+- The backend is built using:
+
+    - `FastAPI`  Used to build a high-performance RESTful API with automatic documentation and modern Python features.
+
+    - `Redis`  Implemented to handle concurrency and prevent double bookings when multiple patients attempt to book the same doctor simultaneously.
+
+    - `MySQL`  Serves as the primary relational database for storage of patients, doctors, and appointments data.
+
+### API Documentation (Swagger)
+
+- You can view and test the available API endpoints through the automatically generated Swagger UI: [Open Swagger Docs.](https://healthcare-live-demo-production-bf1a.up.railway.app/docs)
+
+### Live Demo
+
+- Interact with the live platform: [Click here](https://healthcare-live-demo-production-bf1a.up.railway.app)
+
+
 
 ## Project Structure:
 
