@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" >
     <title>Appointment Booking</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <header>
@@ -25,6 +26,7 @@
 
         <!-- Login View -->
         <section id="login-view" class="view card">
+            <p>Log in to check your upcoming appointments and manage your schedule.</p><br/>
             <h2>Login</h2>
             <div id="loginUserTypeRadios" class="form-group form-group-flex">
                     <label>As a Patient <input type="radio" name="userType" value="patient" checked /></label>
@@ -46,6 +48,7 @@
 
         <!-- Registration View -->
         <section id="register-view" class="view card hidden">
+            <p>Register as a patient or doctor to enjoy seamless and flexible healthcare appointment booking services.</p><br/>
             <h2>Register</h2>
             <div class="form-group form-group-flex">
                 <label>As a Patient <input type="radio" name="userType" value="patient" checked /></label>
@@ -208,7 +211,7 @@
         "imports": {}
     }
     </script>
-    <script type="module" src="app.js"></script>
+    <script type="module" src="/static/app.js"></script>
 </body>
 </html>
 
