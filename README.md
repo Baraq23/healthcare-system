@@ -14,11 +14,11 @@
 
 ### API Documentation (Swagger)
 
-- You can view and test the available API endpoints through the automatically generated Swagger UI: (Open Swagger Docs.)[https://healthcare-live-demo-production-bf1a.up.railway.app/docs]
+- You can view and test the available API endpoints through the automatically generated Swagger UI: [Open Swagger Docs.](https://healthcare-live-demo-production-bf1a.up.railway.app/docs)
 
 ### Live Demo
 
-- Interact with the live platform: (Click here)[https://healthcare-live-demo-production-bf1a.up.railway.app]
+- Interact with the live platform: [Click here](https://healthcare-live-demo-production-bf1a.up.railway.app)
 
 
 
