@@ -122,7 +122,7 @@ uvicorn main:app --reload
 | Method | Path                           | Description                |
 |--------|--------------------------------|----------------------------|
 | POST   | `/api/patients/login`          | Login patient(receive back JWT access token as response)|
-| GET    | `/api/patients/me`             | Get all patient's profile using the received JWT access token|
+| GET    | `/api/patients/me`             | Get patient's profile using the received JWT access token|
 | GET    | `/api/patients/`               | Get all patient            |
 | POST   | `/api/patients/`               | Create patient             |
 | GET    | `/api/patients/{patient_id}`   | Get patient by ID          |
