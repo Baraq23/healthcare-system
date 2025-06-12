@@ -119,35 +119,37 @@ uvicorn main:app --reload
 
  *`Patients`*
 
-| Method | Path                       | Description                |
-|--------|----------------------------|----------------------------|
-| POST   | `/patients/login`          | Login patient              |
-| GET    | `/patients/`               | Get all patients           |
-| POST   | `/patients/`               | Create patient             |
-| GET    | `/patients/{patient_id}`   | Get patient by ID          |
-| PUT    | `/patients/{patient_id}`   | Update patient by ID       |
+| Method | Path                           | Description                |
+|--------|--------------------------------|----------------------------|
+| POST   | `/api/patients/login`          | Login patient(receive back JWT access token as response)|
+| GET    | `/api/patients/me`             | Get all patient's profile using the received JWT access token|
+| GET    | `/api/patients/`               | Get all patient            |
+| POST   | `/api/patients/`               | Create patient             |
+| GET    | `/api/patients/{patient_id}`   | Get patient by ID          |
+| PUT    | `/api/patients/{patient_id}`   | Update patient by ID       |
 
 ---
 
  *`Doctors`*
 
-| Method | Path                     | Description                |
-|--------|--------------------------|----------------------------|
-| POST   | `/doctors/login`         | Login doctor               |
-| GET    | `/doctors/`              | Get all doctors            |
-| POST   | `/doctors/`              | Create doctor              |
-| GET    | `/doctors/{doctor_id}`   | Get doctor by ID           |
-| PUT    | `/doctors/{doctor_id}`   | Update doctor by ID        |
+| Method | Path                         | Description                |
+|--------|------------------------------|----------------------------|
+| POST   | `/api/doctors/login`         | Login doctor (receive back JWT access token as response)|
+| GET    | `/api/doctors/me`            | Get doctor's profile using the received JWT access token|
+| GET    | `/api/doctors/`              | Get all doctors            |
+| POST   | `/api/doctors/`              | Create doctor              |
+| GET    | `/api/doctors/{doctor_id}`   | Get doctor by ID           |
+| PUT    | `/api/doctors/{doctor_id}`   | Update doctor by ID        |
 
 ---
 
  *`Specializations`*
 
-| Method | Path                                 | Description                |
-|--------|--------------------------------------|----------------------------|
-| POST   | `/specializations/`                  | Create specialization      |
-| GET    | `/specializations/`                  | Get all specializations    |
-| GET    | `/specializations/{specialization_id}`| Get specialization by ID   |
+| Method | Path                                     | Description                |
+|--------|------------------------------------------|----------------------------|
+| POST   | `/api/specializations/`                  | Create specialization (reserved for administrators)|
+| GET    | `/api/specializations/`                  | Get all specializations    |
+| GET    | `/api/specializations/{specialization_id}`| Get specialization by ID  |
 
 ---
 
@@ -155,11 +157,11 @@ uvicorn main:app --reload
 
 | Method | Path                                               | Description                      |
 |--------|----------------------------------------------------|----------------------------------|
-| POST   | `/appointments/`                                  | Create appointment               |
-| GET    | `/appointments/patient/{patient_id}`               | Get patient appointments         |
-| GET    | `/appointments/doctor/{doctor_id}`                 | Get doctor appointments          |
-| PUT    | `/appointments/{appointment_id}/cancel`            | Cancel appointment               |
-| GET    | `/appointments/doctor/{doctor_id}/available-slots` | Get available slots for doctor   |
+| POST   | `/api/appointments/`                                   | Create appointment               |
+| GET    | `/api/appointments/patient/{patient_id}`               | Get patient appointments         |
+| GET    | `/api/appointments/doctor/{doctor_id}`                 | Get doctor appointments          |
+| PUT    | `/api/appointments/{appointment_id}/cancel`            | Cancel appointment               |
+| GET    | `/api/appointments/doctor/{doctor_id}/available-slots` | Get available slots for doctor   |
 
 
 
